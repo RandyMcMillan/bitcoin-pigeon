@@ -40,10 +40,12 @@ case "$(uname -m)" in
     arm64)
         SIMULATOR_TARGET="aarch64-apple-ios-sim"
         CATALYST_TARGET="aarch64-apple-ios-macabi"
+        MACOS_TARGET="aarch64-apple-darwin"
         ;;
     x86_64)
         SIMULATOR_TARGET="x86_64-apple-ios"
         CATALYST_TARGET="x86_64-apple-ios-macabi"
+        MACOS_TARGET="x86_64-apple-darwin"
         ;;
     *)
         echo "Unsupported host architecture: $(uname -m)" >&2
@@ -51,7 +53,7 @@ case "$(uname -m)" in
         ;;
 esac
 
-targets=("${DEVICE_TARGET}" "${SIMULATOR_TARGET}" "${CATALYST_TARGET}")
+targets=("${DEVICE_TARGET}" "${SIMULATOR_TARGET}" "${CATALYST_TARGET}" "${MACOS_TARGET}")
 
 for target in "${targets[@]}"; do
     rustup target add ${target}
@@ -69,6 +71,7 @@ xcodebuild -create-xcframework \
     -library "${TARGETDIR}/${DEVICE_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
     -library "${TARGETDIR}/${SIMULATOR_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
     -library "${TARGETDIR}/${CATALYST_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
+    -library "${TARGETDIR}/${MACOS_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
     -output "${XCFRAMEWORK_PATH}"
 
 rm -rf "${NEW_HEADER_DIR}"
