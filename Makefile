@@ -4,6 +4,8 @@ PROJECT := swiftyapp/swiftyapp.xcodeproj
 SCHEME := swiftyapp
 BUILD_SCRIPT := ./build.sh
 RUST_CRATE_DIR := rustylib
+SWIFT_PACKAGE_DIR := swiftyapp/Lib/swiftyrustlib
+SWIFT_PACKAGE_BUILD_DIR := .build/swift-test
 ICON_SOURCE := assets/icon.png
 ICONSET_DIR := swiftyapp/swiftyapp/Assets.xcassets/AppIcon.appiconset
 DERIVED_DATA ?= .build/xcode
@@ -20,12 +22,13 @@ CATALYST_APP_PATH := $(SYMROOT)/$(CONFIGURATION)-maccatalyst/$(APP_NAME)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help rust icons resolve app catalyst install clean
+.PHONY: help rust icons test resolve app catalyst install clean
 
 help:
 	@printf '%s\n' \
 		'make rust      - build the Rust library, bindings, and XCFramework' \
 		'make icons     - generate iOS and macOS app icons from assets/icon.png' \
+		'make test      - build Rust and run the live Swift package test' \
 		'make resolve   - resolve local Swift package dependencies' \
 		'make app       - build the iOS app for a generic simulator destination' \
 		'make catalyst  - build the app for Mac Catalyst' \
@@ -71,6 +74,9 @@ icons:
 		size="$${spec##*:}"; \
 		sips -z "$$size" "$$size" "$(ICON_SOURCE)" --out "$(ICONSET_DIR)/$$name" >/dev/null; \
 	done
+
+test: rust
+	cd "$(SWIFT_PACKAGE_DIR)" && swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
 
 resolve:
 	xcodebuild -resolvePackageDependencies -project "$(PROJECT)" -scheme "$(SCHEME)"
