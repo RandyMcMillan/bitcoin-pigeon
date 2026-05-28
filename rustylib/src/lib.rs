@@ -19,8 +19,9 @@ impl std::error::Error for BlastTransactionError {}
 #[uniffi::export(async_runtime = "tokio")]
 pub async fn blast_transaction_hex(
     tx_hex: String,
+    tor_only: bool,
 ) -> Result<u32, BlastTransactionError> {
-    tx_pigeon::blast_transaction_hex(&tx_hex)
+    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only)
         .await
         .map(|count| count as u32)
         .map_err(|error| BlastTransactionError::Message {
