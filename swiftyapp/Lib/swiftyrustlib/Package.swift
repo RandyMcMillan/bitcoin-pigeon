@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "RustyLib",
     platforms: [
-        .macOS(.v15),
+        .macOS(.v13),
         .iOS(.v15),
         .macCatalyst(.v15)
     ],
@@ -21,7 +21,11 @@ let package = Package(
             dependencies: [
                 .byName(name: "RustyCore")
             ],
-            path: "Sources/"
+            path: "Sources/",
+            linkerSettings: [
+                .linkedLibrary("lzma"),
+                .linkedLibrary("sqlite3"),
+            ]
         ),
         .testTarget(
             name: "RustyLibTests",

@@ -6,10 +6,14 @@ final class RustyLibTests: XCTestCase {
     func testBlastsRecentMempoolTransactions() async throws {
         let recent = try await fetchRecentTransactions()
         XCTAssertFalse(recent.isEmpty, "mempool recent returned no transactions")
+        NSLog("mempool recent returned \(recent.count) transactions")
 
-        for tx in recent {
+        for (index, tx) in recent.enumerated() {
+            NSLog("[\(index + 1)/\(recent.count)] fetching hex for \(tx.txid)")
             let txHex = try await fetchTransactionHex(txid: tx.txid)
-            _ = try await blastTransactionHex(txHex: txHex)
+            NSLog("[\(index + 1)/\(recent.count)] blasting \(tx.txid)")
+            let count = try await blastTransactionHex(txHex: txHex)
+            NSLog("[\(index + 1)/\(recent.count)] blasted \(tx.txid) to \(count) nodes")
         }
     }
 }
