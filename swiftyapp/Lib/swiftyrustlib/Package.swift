@@ -4,6 +4,7 @@ import PackageDescription
 let package = Package(
     name: "RustyLib",
     platforms: [
+        .macOS(.v15),
         .iOS(.v15),
         .macCatalyst(.v15)
     ],
@@ -21,6 +22,11 @@ let package = Package(
                 .byName(name: "RustyCore")
             ],
             path: "Sources/"
+        ),
+        .testTarget(
+            name: "RustyLibTests",
+            dependencies: ["RustyLib"],
+            path: "Tests"
         ),
         .binaryTarget(
             name: "RustyCore",
