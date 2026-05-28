@@ -37,7 +37,7 @@
 			name = "Build RustyLib";
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "set -euo pipefail\ncd \"${SRCROOT}/..\"\n./build.sh\n";
+			shellScript = "set -euxo pipefail\ncd \"${SRCROOT}/..\"\n./build.sh\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
