@@ -22,13 +22,14 @@ CATALYST_APP_PATH := $(SYMROOT)/$(CONFIGURATION)-maccatalyst/$(APP_NAME)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help rust icons test test-tor-only resolve app catalyst install clean
+.PHONY: help rust icons test test-tor resolve app catalyst install clean
 
 help:
 	@printf '%s\n' \
 		'make rust      - build the Rust library, bindings, and XCFramework' \
 		'make icons     - generate iOS and macOS app icons from assets/icon.png' \
 		'make test      - build Rust and run the live Swift package test' \
+		'make test-tor  - run the live Swift package test with Tor-only fanout' \
 		'make resolve   - resolve local Swift package dependencies' \
 		'make app       - build the iOS app for a generic simulator destination' \
 		'make catalyst  - build the app for Mac Catalyst' \
@@ -78,7 +79,7 @@ icons:
 test: rust
 	cd "$(SWIFT_PACKAGE_DIR)" && swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
 
-test-tor-only: rust
+test-tor: rust
 	cd "$(SWIFT_PACKAGE_DIR)" && TOR_ONLY=1 swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
 
 resolve:
