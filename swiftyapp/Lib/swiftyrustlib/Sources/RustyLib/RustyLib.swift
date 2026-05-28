@@ -432,19 +432,99 @@ private struct FfiConverterString: FfiConverter {
     }
 }
 
-public func rustAdd(a: UInt32, b: UInt32) -> UInt32 {
-    return try! FfiConverterUInt32.lift(try! rustCall {
-        uniffi_rustylib_fn_func_rust_add(
-            FfiConverterUInt32.lower(a),
-            FfiConverterUInt32.lower(b), $0
-        )
-    })
+public enum BlastTransactionError {
+    case Message(message: String)
 }
 
-public func rustHello() -> String {
-    return try! FfiConverterString.lift(try! rustCall {
-        uniffi_rustylib_fn_func_rust_hello($0)
-    })
+public struct FfiConverterTypeBlastTransactionError: FfiConverterRustBuffer {
+    typealias SwiftType = BlastTransactionError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BlastTransactionError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return try .Message(
+                message: FfiConverterString.read(from: &buf)
+            )
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: BlastTransactionError, into buf: inout [UInt8]) {
+        switch value {
+        case .Message(_ /* message is ignored*/ ):
+            writeInt(&buf, Int32(1))
+        }
+    }
+}
+
+extension BlastTransactionError: Equatable, Hashable {}
+
+extension BlastTransactionError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
+
+private let UNIFFI_RUST_FUTURE_POLL_READY: Int8 = 0
+private let UNIFFI_RUST_FUTURE_POLL_MAYBE_READY: Int8 = 1
+
+private let uniffiContinuationHandleMap = UniffiHandleMap<UnsafeContinuation<Int8, Never>>()
+
+private func uniffiRustCallAsync<F, T>(
+    rustFutureFunc: () -> UInt64,
+    pollFunc: (UInt64, @escaping UniffiRustFutureContinuationCallback, UInt64) -> Void,
+    completeFunc: (UInt64, UnsafeMutablePointer<RustCallStatus>) -> F,
+    freeFunc: (UInt64) -> Void,
+    liftFunc: (F) throws -> T,
+    errorHandler: ((RustBuffer) throws -> Swift.Error)?
+) async throws -> T {
+    // Make sure to call uniffiEnsureInitialized() since future creation doesn't have a
+    // RustCallStatus param, so doesn't use makeRustCall()
+    uniffiEnsureInitialized()
+    let rustFuture = rustFutureFunc()
+    defer {
+        freeFunc(rustFuture)
+    }
+    var pollResult: Int8
+    repeat {
+        pollResult = await withUnsafeContinuation {
+            pollFunc(
+                rustFuture,
+                uniffiFutureContinuationCallback,
+                uniffiContinuationHandleMap.insert(obj: $0)
+            )
+        }
+    } while pollResult != UNIFFI_RUST_FUTURE_POLL_READY
+
+    return try liftFunc(makeRustCall(
+        { completeFunc(rustFuture, $0) },
+        errorHandler: errorHandler
+    ))
+}
+
+/// Callback handlers for an async calls.  These are invoked by Rust when the future is ready.  They
+/// lift the return value or error and resume the suspended function.
+private func uniffiFutureContinuationCallback(handle: UInt64, pollResult: Int8) {
+    if let continuation = try? uniffiContinuationHandleMap.remove(handle: handle) {
+        continuation.resume(returning: pollResult)
+    } else {
+        print("uniffiFutureContinuationCallback invalid handle")
+    }
+}
+
+public func blastTransactionHex(txHex: String) async throws -> UInt32 {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_blast_transaction_hex(FfiConverterString.lower(txHex))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_u32,
+            completeFunc: ffi_rustylib_rust_future_complete_u32,
+            freeFunc: ffi_rustylib_rust_future_free_u32,
+            liftFunc: FfiConverterUInt32.lift,
+            errorHandler: FfiConverterTypeBlastTransactionError.lift
+        )
 }
 
 private enum InitializationResult {
@@ -463,10 +543,7 @@ private var initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if uniffi_rustylib_checksum_func_rust_add() != 47653 {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if uniffi_rustylib_checksum_func_rust_hello() != 11814 {
+    if uniffi_rustylib_checksum_func_blast_transaction_hex() != 64446 {
         return InitializationResult.apiChecksumMismatch
     }
 
