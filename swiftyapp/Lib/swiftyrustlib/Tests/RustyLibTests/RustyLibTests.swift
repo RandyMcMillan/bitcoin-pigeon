@@ -12,7 +12,7 @@ final class RustyLibTests: XCTestCase {
             NSLog("[\(index + 1)/\(recent.count)] fetching hex for \(tx.txid)")
             let txHex = try await fetchTransactionHex(txid: tx.txid)
             NSLog("[\(index + 1)/\(recent.count)] blasting \(tx.txid)")
-            let count = try await blastTransactionHex(txHex: txHex)
+            let count = try await blastTransactionHex(txHex: txHex, torOnly: false)
             NSLog("[\(index + 1)/\(recent.count)] blasted \(tx.txid) to \(count) nodes")
         }
     }
