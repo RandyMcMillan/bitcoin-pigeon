@@ -20,8 +20,9 @@ impl std::error::Error for BlastTransactionError {}
 pub async fn blast_transaction_hex(
     tx_hex: String,
     tor_only: bool,
+    relay: bool,
 ) -> Result<u32, BlastTransactionError> {
-    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only)
+    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay)
         .await
         .map(|count| count as u32)
         .map_err(|error| BlastTransactionError::Message {
