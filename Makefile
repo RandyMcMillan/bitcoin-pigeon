@@ -22,7 +22,7 @@ CATALYST_APP_PATH := $(SYMROOT)/$(CONFIGURATION)-maccatalyst/$(APP_NAME)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help rust icons test resolve app catalyst install clean
+.PHONY: help rust icons test test-tor-only resolve app catalyst install clean
 
 help:
 	@printf '%s\n' \
@@ -77,6 +77,9 @@ icons:
 
 test: rust
 	cd "$(SWIFT_PACKAGE_DIR)" && swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
+
+test-tor-only: rust
+	cd "$(SWIFT_PACKAGE_DIR)" && TOR_ONLY=1 swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
 
 resolve:
 	xcodebuild -resolvePackageDependencies -project "$(PROJECT)" -scheme "$(SCHEME)"
