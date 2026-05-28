@@ -2,7 +2,7 @@
 
 ![Xcode](assets/Image_119okb119okb119o.png)
 
-## MacOS / iOS version of [tx-pigeont](https://github.com/stutxo/tx-pigeon)
+## macOS / iOS version of [tx-pigeon](https://github.com/stutxo/tx-pigeon)
 
 
 ## Build
@@ -13,8 +13,8 @@
 
 ## Setup
 
-`rustylib` rust library with two exposed functions  
-`swiftyapp` hello world ios app that imports and uses the two rust lib functions
+`rustylib` Rust library that exposes the tx-pigeon transaction blasting API  
+`swiftyapp` iOS app that imports the Rust FFI and blasts a raw transaction hex
 `swiftyrustlib` Swift package of rust lib
 
 1. Run `make rust` (or `./build.sh`).
@@ -23,7 +23,7 @@
 1. Build and run the project in Xcode.
 1. For Intel Macs, enable and choose the **Mac Catalyst** destination in Xcode.
 1. On Apple Silicon Macs, you can also choose **My Mac (Designed for iPad)** in Xcode.
-1. Verify that the Rust library functions are successfully called from the Swift project.
+1. Verify that the Rust tx-pigeon function is successfully called from the Swift project.
 
 ## Make targets
 
