@@ -1,8 +1,11 @@
-# xcode-rust-example
+# bitcoin-pigeon
 
-![Xcode](assets/xcode-rust-example-screenshot.jpg)
+![Xcode](assets/Image_119okb119okb119o.png)
 
-Demonstrates the ability to generate the necessary bindings for a rust lib compiled for an apple target to be embedded and called by a Swift project in Xcode.
+## MacOS / iOS version of [tx-pigeont](https://github.com/stutxo/tx-pigeon)
+
+
+## Build
 
 ## pre-reqs
 1. [cargo](https://rustup.rs/)
