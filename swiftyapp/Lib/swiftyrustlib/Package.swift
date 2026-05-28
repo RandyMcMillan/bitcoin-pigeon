@@ -25,6 +25,7 @@ let package = Package(
             linkerSettings: [
                 .linkedLibrary("lzma"),
                 .linkedLibrary("sqlite3"),
+                .linkedFramework("SystemConfiguration"),
             ]
         ),
         .testTarget(
