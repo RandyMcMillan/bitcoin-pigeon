@@ -25,7 +25,7 @@ struct ContentView: View {
             Button(isWorking ? "Blasting..." : "Blast transaction") {
                 Task { await blastTransaction() }
             }
-            .disabled(isWorking || txHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .disabled(isWorking || normalizedTxHex.isEmpty)
 
             Text(statusMessage)
         }
@@ -38,13 +38,17 @@ struct ContentView: View {
         defer { isWorking = false }
 
         do {
-            let count = try await blastTransactionHex(txHex: txHex, torOnly: torOnly)
+            let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly)
             statusMessage = torOnly
                 ? "Delivered to \(count) Tor-only libre relay nodes."
                 : "Delivered to \(count) libre relay nodes."
         } catch {
             statusMessage = error.localizedDescription
         }
+    }
+
+    private var normalizedTxHex: String {
+        txHex.components(separatedBy: .whitespacesAndNewlines).joined()
     }
 }
 
