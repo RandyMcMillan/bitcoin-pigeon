@@ -5,6 +5,7 @@ import RustyLib
 final class RustyLibTests: XCTestCase {
     func testBlastsRecentMempoolTransactions() async throws {
         let torOnly = ProcessInfo.processInfo.environment["TOR_ONLY"] == "1"
+        let relay = ProcessInfo.processInfo.environment["RELAY"] != "0"
         let recent = try await fetchRecentTransactions()
         XCTAssertFalse(recent.isEmpty, "mempool recent returned no transactions")
         NSLog("mempool recent returned \(recent.count) transactions")
@@ -12,9 +13,9 @@ final class RustyLibTests: XCTestCase {
         for (index, tx) in recent.enumerated() {
             NSLog("[\(index + 1)/\(recent.count)] fetching hex for \(tx.txid)")
             let txHex = try await fetchTransactionHex(txid: tx.txid)
-            NSLog("[\(index + 1)/\(recent.count)] blasting \(tx.txid) torOnly=\(torOnly)")
-            let count = try await blastTransactionHex(txHex: txHex, torOnly: torOnly)
-            NSLog("[\(index + 1)/\(recent.count)] blasted \(tx.txid) to \(count) nodes torOnly=\(torOnly)")
+            NSLog("[\(index + 1)/\(recent.count)] blasting \(tx.txid) torOnly=\(torOnly) relay=\(relay)")
+            let count = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
+            NSLog("[\(index + 1)/\(recent.count)] blasted \(tx.txid) to \(count) nodes torOnly=\(torOnly) relay=\(relay)")
         }
     }
 }
