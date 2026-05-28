@@ -11,6 +11,7 @@ import RustyLib
 struct ContentView: View {
     @State private var txHex = ""
     @State private var torOnly = false
+    @State private var relay = true
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
     @State private var isWorking = false
 
@@ -21,6 +22,7 @@ struct ContentView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(.secondary))
 
             Toggle("Tor only", isOn: $torOnly)
+            Toggle("Relay", isOn: $relay)
 
             Button(isWorking ? "Blasting..." : "Blast transaction") {
                 Task { await blastTransaction() }
@@ -38,10 +40,8 @@ struct ContentView: View {
         defer { isWorking = false }
 
         do {
-            let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly)
-            statusMessage = torOnly
-                ? "Delivered to \(count) Tor-only libre relay nodes."
-                : "Delivered to \(count) libre relay nodes."
+            let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly, relay: relay)
+            statusMessage = "Delivered to \(count) libre relay nodes. relay=\(relay ? "on" : "off") torOnly=\(torOnly ? "on" : "off")"
         } catch {
             statusMessage = error.localizedDescription
         }
