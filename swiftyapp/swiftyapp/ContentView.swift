@@ -9,20 +9,37 @@ import SwiftUI
 import RustyLib
 
 struct ContentView: View {
+    @State private var txHex = ""
+    @State private var statusMessage = "Paste a raw transaction hex, then blast it."
+    @State private var isWorking = false
+
     var body: some View {
-        print("ContentView: body property accessed.")
-        let helloMessage = rustHello()
-        let sum = rustAdd(a: 10, b: 32)
-        print("ContentView: rustHello() returned \(helloMessage)")
-        print("ContentView: rustAdd(a: 10, b: 32) returned \(sum)")
         return VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text(helloMessage)
-            Text(String(sum))
+            TextEditor(text: $txHex)
+                .frame(minHeight: 180)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(.secondary))
+
+            Button(isWorking ? "Blasting..." : "Blast transaction") {
+                Task { await blastTransaction() }
+            }
+            .disabled(isWorking || txHex.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            Text(statusMessage)
         }
         .padding()
+    }
+
+    @MainActor
+    private func blastTransaction() async {
+        isWorking = true
+        defer { isWorking = false }
+
+        do {
+            let count = try await blastTransactionHex(txHex: txHex)
+            statusMessage = "Delivered to \(count) libre relay nodes."
+        } catch {
+            statusMessage = error.localizedDescription
+        }
     }
 }
 
