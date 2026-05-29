@@ -16,6 +16,11 @@ impl std::fmt::Display for BlastTransactionError {
 
 impl std::error::Error for BlastTransactionError {}
 
+#[uniffi::export]
+pub fn set_tor_only(enabled: bool) {
+    tx_pigeon::set_tor_only(enabled);
+}
+
 #[uniffi::export(async_runtime = "tokio")]
 pub async fn blast_transaction_hex(
     tx_hex: String,
