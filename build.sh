@@ -22,6 +22,51 @@ SWIFT_APP=swiftyapp
 SWIFT_PROJECT=swiftyrustlib
 SWIFT_PROJECT_NAME=RustyLib
 SWIFT_CORE_NAME=RustyCore
+ICON_SPECS=(
+    "iphone_20x20@2x.png:40"
+    "iphone_20x20@3x.png:60"
+    "iphone_29x29@2x.png:58"
+    "iphone_29x29@3x.png:87"
+    "iphone_40x40@2x.png:80"
+    "iphone_40x40@3x.png:120"
+    "iphone_60x60@2x.png:120"
+    "iphone_60x60@3x.png:180"
+    "ipad_20x20@1x.png:20"
+    "ipad_20x20@2x.png:40"
+    "ipad_29x29@1x.png:29"
+    "ipad_29x29@2x.png:58"
+    "ipad_40x40@1x.png:40"
+    "ipad_40x40@2x.png:80"
+    "ipad_76x76@1x.png:76"
+    "ipad_76x76@2x.png:152"
+    "ipad_83.5x83.5@2x.png:167"
+    "mac_16x16@1x.png:16"
+    "mac_16x16@2x.png:32"
+    "mac_32x32@1x.png:32"
+    "mac_32x32@2x.png:64"
+    "mac_128x128@1x.png:128"
+    "mac_128x128@2x.png:256"
+    "mac_256x256@1x.png:256"
+    "mac_256x256@2x.png:512"
+    "mac_512x512@1x.png:512"
+    "mac_512x512@2x.png:1024"
+    "ios-marketing_1024x1024@1x.png:1024"
+)
+
+generate_iconset() {
+    local source="$1"
+    local dir="$2"
+
+    mkdir -p "${dir}"
+    rm -f "${dir}"/*.png
+
+    local spec name size
+    for spec in "${ICON_SPECS[@]}"; do
+        name="${spec%%:*}"
+        size="${spec##*:}"
+        sips -z "$size" "$size" "${source}" --out "${dir}/${name}" >/dev/null
+    done
+}
 
 cd $MY_CRATE
 
@@ -77,6 +122,9 @@ xcodebuild -create-xcframework \
 rm -rf "${NEW_HEADER_DIR}"
 
 cd ../
+
+generate_iconset "./assets/icon.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/AppIcon.appiconset"
+generate_iconset "./assets/icon-tor.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/AppIconTor.appiconset"
 
 SWIFT_LIB_PATH="./${SWIFT_APP}/Lib/${SWIFT_PROJECT}"
 SWIFT_ARTIFACTS_PATH="${SWIFT_LIB_PATH}/artifacts"
