@@ -22,6 +22,9 @@ struct ContentView: View {
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(.secondary))
 
             Toggle("Tor only", isOn: $torOnly)
+                .onChange(of: torOnly) { _, value in
+                    setTorOnly(enabled: value)
+                }
             Toggle("Relay", isOn: $relay)
 
             Button(isWorking ? "Blasting..." : "Blast transaction") {
@@ -38,6 +41,7 @@ struct ContentView: View {
     private func blastTransaction() async {
         isWorking = true
         defer { isWorking = false }
+        setTorOnly(enabled: torOnly)
 
         do {
             let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly, relay: relay)
