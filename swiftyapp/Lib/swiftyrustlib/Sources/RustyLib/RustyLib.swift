@@ -548,6 +548,14 @@ public func blastTransactionHex(txHex: String, torOnly: Bool, relay: Bool) async
         )
 }
 
+public func setTorOnly(enabled: Bool) {
+    try! rustCall {
+        uniffi_rustylib_fn_func_set_tor_only(
+            FfiConverterBool.lower(enabled), $0
+        )
+    }
+}
+
 private enum InitializationResult {
     case ok
     case contractVersionMismatch
@@ -565,6 +573,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.contractVersionMismatch
     }
     if uniffi_rustylib_checksum_func_blast_transaction_hex() != 33064 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_set_tor_only() != 5779 {
         return InitializationResult.apiChecksumMismatch
     }
 
