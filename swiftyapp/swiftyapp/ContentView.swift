@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var protocolVersion = ""
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
     @State private var isWorking = false
+    @State private var showingSettings = false
     @FocusState private var isTxHexFocused: Bool
 
     var body: some View {
@@ -101,6 +102,19 @@ struct ContentView: View {
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .ignoresSafeArea(edges: .bottom)
+                    .overlay(alignment: .bottomTrailing) {
+                        Button {
+                            showingSettings.toggle()
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .padding(12)
+                                .background(.ultraThinMaterial, in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(12)
+                    }
                 }
                 .frame(width: panelWidth)
                 .frame(height: panelHeight)
@@ -109,6 +123,22 @@ struct ContentView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 isTxHexFocused = false
+            }
+            .sheet(isPresented: $showingSettings) {
+                NavigationStack {
+                    Form {
+                        Section("Controls") {
+                            Toggle("Tor only", isOn: $torOnly)
+                            Toggle("Relay", isOn: $relay)
+                        }
+
+                        Section("Protocol") {
+                            TextField("Protocol prefix", text: $protocolPrefix)
+                            TextField("Protocol version", text: $protocolVersion)
+                        }
+                    }
+                    .navigationTitle("Settings")
+                }
             }
         }
     }
