@@ -100,6 +100,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(.ultraThinMaterial)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .ignoresSafeArea(edges: .bottom)
                 }
                 .frame(width: panelWidth)
                 .frame(height: panelHeight)
