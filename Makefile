@@ -24,15 +24,18 @@ CATALYST_APP_PATH := $(SYMROOT)/$(CONFIGURATION)-maccatalyst/$(APP_NAME)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help rust icons icons-tor test test-tor resolve app catalyst install clean
+.PHONY: help rust icons icons-tor art test test-tor resolve app catalyst install clean
+.PHONY: test-relay-nocapture
 
 help:
 	@printf '%s\n' \
 		'make rust      - build the Rust library, bindings, and XCFramework' \
 		'make icons     - generate iOS and macOS app icons from assets/icon.png' \
 		'make icons-tor - generate iOS and macOS tor icons from assets/icon-tor.png' \
+		'make art       - generate the tor/art image sets from assets/*.png' \
 		'make test      - build Rust and run the live Swift package test' \
 		'make test-tor  - run the live Swift package test with Tor-only fanout' \
+		'make test-relay-nocapture - run the visible 60s relay nocapture test' \
 		'make resolve   - resolve local Swift package dependencies' \
 		'make app       - build the iOS app for a generic simulator destination' \
 		'make catalyst  - build the app for Mac Catalyst' \
@@ -118,11 +121,42 @@ icons-tor:
 		sips -z "$$size" "$$size" "$(TOR_ICON_SOURCE)" --out "$(TOR_ICONSET_DIR)/$$name" >/dev/null; \
 	done
 
+art:
+	@set -euo pipefail; \
+	gen_imageset() { \
+		source="$$1"; \
+		dir="$$2"; \
+		base="$$(basename "$$source" .png)"; \
+		width="$$(sips -g pixelWidth "$$source" | awk '/pixelWidth/ {print $$2; exit}')"; \
+		height="$$(sips -g pixelHeight "$$source" | awk '/pixelHeight/ {print $$2; exit}')"; \
+		mkdir -p "$$dir"; \
+		rm -f "$$dir/$$base.png" "$$dir/$$base@2x.png" "$$dir/$$base@3x.png"; \
+		sips -z "$$height" "$$width" "$$source" --out "$$dir/$$base.png" >/dev/null; \
+		sips -z "$$((height * 2))" "$$((width * 2))" "$$source" --out "$$dir/$$base@2x.png" >/dev/null; \
+		sips -z "$$((height * 3))" "$$((width * 3))" "$$source" --out "$$dir/$$base@3x.png" >/dev/null; \
+	}; \
+	gen_imageset assets/icon-tor.png swiftyapp/swiftyapp/Assets.xcassets/icon-tor.imageset; \
+	gen_imageset assets/icon-tor-gray.png swiftyapp/swiftyapp/Assets.xcassets/icon-tor-gray.imageset; \
+	gen_imageset assets/icon-spread.png swiftyapp/swiftyapp/Assets.xcassets/icon-spread.imageset; \
+	gen_imageset assets/icon-spread-tor.png swiftyapp/swiftyapp/Assets.xcassets/icon-spread-tor.imageset; \
+	gen_imageset assets/icon-spread-tor-purple.png swiftyapp/swiftyapp/Assets.xcassets/icon-spread-tor-purple.imageset; \
+	gen_imageset assets/icon-carrier-tor.png swiftyapp/swiftyapp/Assets.xcassets/icon-carrier-tor.imageset; \
+	gen_imageset assets/icon-carrier-tor-gray.png swiftyapp/swiftyapp/Assets.xcassets/icon-carrier-tor-gray.imageset; \
+	gen_imageset assets/carrier-tor-purple.png swiftyapp/swiftyapp/Assets.xcassets/carrier-tor-purple.imageset; \
+	gen_imageset assets/art1.png swiftyapp/swiftyapp/Assets.xcassets/art1.imageset; \
+	gen_imageset assets/art2.png swiftyapp/swiftyapp/Assets.xcassets/art2.imageset; \
+	gen_imageset assets/portrait1.png swiftyapp/swiftyapp/Assets.xcassets/portrait1.imageset; \
+	gen_imageset assets/square-art1.png swiftyapp/swiftyapp/Assets.xcassets/square-art1.imageset; \
+	gen_imageset assets/square2.png swiftyapp/swiftyapp/Assets.xcassets/square2.imageset
+
 test: rust
 	cd "$(SWIFT_PACKAGE_DIR)" && swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
 
 test-tor: rust
 	cd "$(SWIFT_PACKAGE_DIR)" && TOR_ONLY=1 swift test --build-path "../../$(SWIFT_PACKAGE_BUILD_DIR)"
+
+test-relay-nocapture: rust
+	cd tx-pigeon && cargo test --test relay_nocapture -- --nocapture --exact relay_nocapture_60_seconds --test-threads=1
 
 resolve:
 	xcodebuild -resolvePackageDependencies -project "$(PROJECT)" -scheme "$(SCHEME)"

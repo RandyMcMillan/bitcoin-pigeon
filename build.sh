@@ -17,6 +17,23 @@ if ! command -v rustup >/dev/null 2>&1; then
     exit 127
 fi
 
+CLEAN=false
+for arg in "$@"; do
+    case "${arg}" in
+        --clean)
+            CLEAN=true
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--clean]"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: ${arg}" >&2
+            exit 64
+            ;;
+    esac
+done
+
 MY_CRATE=rustylib
 SWIFT_APP=swiftyapp
 SWIFT_PROJECT=swiftyrustlib
@@ -68,6 +85,25 @@ generate_iconset() {
     done
 }
 
+generate_imageset() {
+    local source="$1"
+    local dir="$2"
+    local base
+    local width
+    local height
+
+    base="$(basename "${source}" .png)"
+    width="$(sips -g pixelWidth "${source}" | awk '/pixelWidth/ {print $2; exit}')"
+    height="$(sips -g pixelHeight "${source}" | awk '/pixelHeight/ {print $2; exit}')"
+
+    mkdir -p "${dir}"
+    rm -f "${dir}/${base}.png" "${dir}/${base}@2x.png" "${dir}/${base}@3x.png"
+
+    sips -z "${height}" "${width}" "${source}" --out "${dir}/${base}.png" >/dev/null
+    sips -z "$((height * 2))" "$((width * 2))" "${source}" --out "${dir}/${base}@2x.png" >/dev/null
+    sips -z "$((height * 3))" "$((width * 3))" "${source}" --out "${dir}/${base}@3x.png" >/dev/null
+}
+
 cd $MY_CRATE
 
 # step 1 - compile rust library and generate bindings
@@ -83,12 +119,12 @@ DEVICE_TARGET="aarch64-apple-ios"
 
 case "$(uname -m)" in
     arm64)
-        SIMULATOR_TARGET="aarch64-apple-ios-sim"
+        SIMULATOR_TARGETS=("aarch64-apple-ios-sim" "x86_64-apple-ios")
         CATALYST_TARGET="aarch64-apple-ios-macabi"
         MACOS_TARGET="aarch64-apple-darwin"
         ;;
     x86_64)
-        SIMULATOR_TARGET="x86_64-apple-ios"
+        SIMULATOR_TARGETS=("x86_64-apple-ios")
         CATALYST_TARGET="x86_64-apple-ios-macabi"
         MACOS_TARGET="x86_64-apple-darwin"
         ;;
@@ -98,7 +134,14 @@ case "$(uname -m)" in
         ;;
 esac
 
-targets=("${DEVICE_TARGET}" "${SIMULATOR_TARGET}" "${CATALYST_TARGET}" "${MACOS_TARGET}")
+targets=("${DEVICE_TARGET}" "${SIMULATOR_TARGETS[@]}" "${CATALYST_TARGET}" "${MACOS_TARGET}")
+
+if ${CLEAN}; then
+    rm -rf "${MY_CRATE}/out" "${MY_CRATE}/${XCFRAMEWORK_PATH}"
+    for target in "${targets[@]}"; do
+        rm -rf "${TARGETDIR}/${target}"
+    done
+fi
 
 for target in "${targets[@]}"; do
     rustup target add ${target}
@@ -112,12 +155,27 @@ cp "out/${MY_CRATE}FFI.modulemap" "${NEW_HEADER_DIR}/module.modulemap"
 
 rm -rf "${XCFRAMEWORK_PATH}"
 
-xcodebuild -create-xcframework \
-    -library "${TARGETDIR}/${DEVICE_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
-    -library "${TARGETDIR}/${SIMULATOR_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
-    -library "${TARGETDIR}/${CATALYST_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
-    -library "${TARGETDIR}/${MACOS_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}" \
+SIMULATOR_LIB_PATH="${TARGETDIR}/simulator-${RELDIR}/${STATIC_LIB_NAME}"
+mkdir -p "$(dirname "${SIMULATOR_LIB_PATH}")"
+
+if [ "${#SIMULATOR_TARGETS[@]}" -gt 1 ]; then
+    lipo -create \
+        "${TARGETDIR}/${SIMULATOR_TARGETS[0]}/${RELDIR}/${STATIC_LIB_NAME}" \
+        "${TARGETDIR}/${SIMULATOR_TARGETS[1]}/${RELDIR}/${STATIC_LIB_NAME}" \
+        -output "${SIMULATOR_LIB_PATH}"
+else
+    cp "${TARGETDIR}/${SIMULATOR_TARGETS[0]}/${RELDIR}/${STATIC_LIB_NAME}" "${SIMULATOR_LIB_PATH}"
+fi
+
+xcframework_args=(
+    -library "${TARGETDIR}/${DEVICE_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}"
+    -library "${SIMULATOR_LIB_PATH}" -headers "${NEW_HEADER_DIR}"
+    -library "${TARGETDIR}/${CATALYST_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}"
+    -library "${TARGETDIR}/${MACOS_TARGET}/${RELDIR}/${STATIC_LIB_NAME}" -headers "${NEW_HEADER_DIR}"
     -output "${XCFRAMEWORK_PATH}"
+)
+
+xcodebuild -create-xcframework "${xcframework_args[@]}"
 
 rm -rf "${NEW_HEADER_DIR}"
 
@@ -125,6 +183,20 @@ cd ../
 
 generate_iconset "./assets/icon.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/AppIcon.appiconset"
 generate_iconset "./assets/icon-tor.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/AppIconTor.appiconset"
+
+generate_imageset "./assets/icon-tor.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-tor.imageset"
+generate_imageset "./assets/icon-tor-gray.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-tor-gray.imageset"
+generate_imageset "./assets/icon-spread.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-spread.imageset"
+generate_imageset "./assets/icon-spread-tor.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-spread-tor.imageset"
+generate_imageset "./assets/icon-spread-tor-purple.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-spread-tor-purple.imageset"
+generate_imageset "./assets/icon-carrier-tor.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-carrier-tor.imageset"
+generate_imageset "./assets/icon-carrier-tor-gray.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/icon-carrier-tor-gray.imageset"
+generate_imageset "./assets/carrier-tor-purple.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/carrier-tor-purple.imageset"
+generate_imageset "./assets/art1.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/art1.imageset"
+generate_imageset "./assets/art2.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/art2.imageset"
+generate_imageset "./assets/portrait1.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/portrait1.imageset"
+generate_imageset "./assets/square-art1.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/square-art1.imageset"
+generate_imageset "./assets/square2.png" "./${SWIFT_APP}/swiftyapp/Assets.xcassets/square2.imageset"
 
 SWIFT_LIB_PATH="./${SWIFT_APP}/Lib/${SWIFT_PROJECT}"
 SWIFT_ARTIFACTS_PATH="${SWIFT_LIB_PATH}/artifacts"

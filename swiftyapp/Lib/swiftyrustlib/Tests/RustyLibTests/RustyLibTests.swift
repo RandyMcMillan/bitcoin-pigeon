@@ -3,6 +3,11 @@ import XCTest
 import RustyLib
 
 final class RustyLibTests: XCTestCase {
+    func testComposesCustomProtocolIDs() {
+        XCTAssertEqual(composeProtocolID(prefix: "custom_protocol", version: "0.0.1"), "custom_protocol/0.0.1")
+        XCTAssertEqual(composeProtocolID(prefix: "/custom_protocol/", version: "/0.0.1"), "custom_protocol/0.0.1")
+    }
+
     func testBlastsRecentMempoolTransactions() async throws {
         let torOnly = ProcessInfo.processInfo.environment["TOR_ONLY"] == "1"
         let relay = ProcessInfo.processInfo.environment["RELAY"] != "0"
