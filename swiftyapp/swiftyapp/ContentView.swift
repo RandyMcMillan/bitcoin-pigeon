@@ -137,6 +137,8 @@ struct ContentView: View {
                             TextField("Protocol version", text: $protocolVersion)
                         }
                     }
+                    .scrollContentBackground(.hidden)
+                    .background(torOnly ? Color.purple.opacity(0.28) : Color.black.opacity(0.12))
                     .navigationTitle("Settings")
                 }
             }
