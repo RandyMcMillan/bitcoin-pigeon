@@ -83,10 +83,10 @@ struct ContentView: View {
                             Spacer()
                         }
 
-                        TextField("Protocol prefix (e.g. custom_protocol)", text: $protocolPrefix)
+                        TextField("Protocol prefix (default: \(defaultProtocolPrefix))", text: $protocolPrefix)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                        TextField("Protocol version (e.g. 0.0.1)", text: $protocolVersion)
+                        TextField("Protocol version (default: \(defaultProtocolVersion))", text: $protocolVersion)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
 
@@ -133,10 +133,15 @@ struct ContentView: View {
                         }
 
                         Section("Protocol") {
-                            TextField("Protocol prefix", text: $protocolPrefix)
+                            TextField("Protocol prefix (default: \(defaultProtocolPrefix))", text: $protocolPrefix)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
-                            TextField("Protocol version", text: $protocolVersion)
+                            TextField("Protocol version (default: \(defaultProtocolVersion))", text: $protocolVersion)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                            Text("Defaults to \(defaultProtocolPrefix)/\(defaultProtocolVersion).")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .scrollContentBackground(.hidden)
