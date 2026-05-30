@@ -134,6 +134,8 @@ struct ContentView: View {
 
                         Section("Protocol") {
                             TextField("Protocol prefix", text: $protocolPrefix)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
                             TextField("Protocol version", text: $protocolVersion)
                         }
                     }
@@ -145,6 +147,7 @@ struct ContentView: View {
                             Button("Done") {
                                 showingSettings = false
                             }
+                            .foregroundStyle(torOnly ? Color.purple.opacity(0.75) : Color.gray.opacity(0.75))
                         }
                     }
                 }
