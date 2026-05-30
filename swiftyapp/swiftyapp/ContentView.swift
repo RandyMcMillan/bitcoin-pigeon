@@ -33,8 +33,7 @@ struct ContentView: View {
                     alignment: .center)
                     .scaleEffect(1.1)
                     .offset(y: proxy.size.height * 0.00)
-                    //.clipped()
-                    //.ignoresSafeArea()
+                    .ignoresSafeArea()
 
                 VStack {
                     TextEditor(text: $txHex)
