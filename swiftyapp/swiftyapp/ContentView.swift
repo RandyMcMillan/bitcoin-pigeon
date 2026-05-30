@@ -9,11 +9,14 @@ import SwiftUI
 import RustyLib
 
 struct ContentView: View {
+    private let defaultProtocolPrefix = "gnostr"
+    private let defaultProtocolVersion = "0.0.1"
+
     @State private var txHex = ""
     @State private var torOnly = false
     @State private var relay = true
-    @State private var protocolPrefix = ""
-    @State private var protocolVersion = ""
+    @State private var protocolPrefix = "gnostr"
+    @State private var protocolVersion = "0.0.1"
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
     @State private var isWorking = false
     @State private var showingSettings = false
