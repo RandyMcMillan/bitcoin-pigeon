@@ -186,7 +186,7 @@ struct ContentView: View {
             return ""
         }
 
-        let prefix = protocolPrefix.isEmpty ? "custom_protocol" : protocolPrefix
+        let prefix = protocolPrefix.isEmpty ? defaultProtocolPrefix : protocolPrefix
         let version = protocolVersion.isEmpty ? "0.0.1" : protocolVersion
         return " protocol=\(composeProtocolID(prefix: prefix, version: version))"
     }
