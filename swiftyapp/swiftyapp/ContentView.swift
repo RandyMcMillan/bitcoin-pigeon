@@ -140,6 +140,13 @@ struct ContentView: View {
                     .scrollContentBackground(.hidden)
                     .background(torOnly ? Color.purple.opacity(0.28) : Color.black.opacity(0.12))
                     .navigationTitle("Settings")
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingSettings = false
+                            }
+                        }
+                    }
                 }
             }
         }
