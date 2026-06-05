@@ -1,6 +1,21 @@
 {
   "images" : [
-    { "idiom" : "universal", "filename" : "Tor_Browser_icon.svg.png", "scale" : "1x" }
+    {
+      "filename" : "Tor_Browser_icon.svg.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
   ],
-  "info" : { "author" : "xcode", "version" : 1 }
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
 }
