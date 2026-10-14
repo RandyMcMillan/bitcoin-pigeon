@@ -12,6 +12,8 @@
 		291DE5382C3DE74F007F9706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291DE5372C3DE74F007F9706 /* Assets.xcassets */; };
 		291DE53B2C3DE74F007F9706 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291DE53A2C3DE74F007F9706 /* Preview Assets.xcassets */; };
 		2986A2E32C3F8FA200D13583 /* RustyLib in Frameworks */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
+		A1B2C3D41A2B3C4D5E6F7002 /* SwiftyAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */; };
+		A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks (Tests) */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,10 +31,12 @@
 
 /* Begin PBXFileReference section */
 		291DE5302C3DE74F007F9706 /* swiftyapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swiftyapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D41A2B3C4D5E6F7007 /* swiftyappTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = swiftyappTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291DE5332C3DE74F007F9706 /* swiftyappApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = swiftyappApp.swift; sourceTree = "<group>"; };
 		291DE5352C3DE74F007F9706 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		291DE5372C3DE74F007F9706 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		291DE53A2C3DE74F007F9706 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftyAppTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,8 +54,8 @@
 		291DE5272C3DE74F007F9706 = {
 			isa = PBXGroup;
 			children = (
-				29603C272C3F8BB900B29635 /* Lib */,
 				291DE5322C3DE74F007F9706 /* swiftyapp */,
+				A1B2C3D41A2B3C4D5E6F7006 /* swiftyappTests */,
 				291DE5312C3DE74F007F9706 /* Products */,
 				291DE5412C3DE809007F9706 /* Frameworks */,
 			);
@@ -61,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				291DE5302C3DE74F007F9706 /* swiftyapp.app */,
+				A1B2C3D41A2B3C4D5E6F7007 /* swiftyappTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -91,11 +96,12 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		29603C272C3F8BB900B29635 /* Lib */ = {
+		A1B2C3D41A2B3C4D5E6F7006 /* swiftyappTests */ = {
 			isa = PBXGroup;
 			children = (
+				A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */,
 			);
-			path = Lib;
+			path = swiftyappTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -123,7 +129,56 @@
 			productReference = 291DE5302C3DE74F007F9706 /* swiftyapp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A1B2C3D41A2B3C4D5E6F7003 /* swiftyappTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1B2C3D41A2B3C4D5E6F7008 /* Build configuration list for PBXNativeTarget "swiftyappTests" */;
+			buildPhases = (
+				A1B2C3D41A2B3C4D5E6F7013 /* Sources */,
+				A1B2C3D41A2B3C4D5E6F7012 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A1B2C3D41A2B3C4D5E6F7011 /* PBXTargetDependency */,
+			);
+			name = swiftyappTests;
+			packageProductDependencies = (
+				2986A2E22C3F8FA200D13583 /* RustyLib */,
+			);
+			productName = swiftyappTests;
+			productReference = A1B2C3D41A2B3C4D5E6F7007 /* swiftyappTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 291DE5282C3DE74F007F9706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 291DE52F2C3DE74F007F9706;
+			remoteInfo = swiftyapp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A1B2C3D41A2B3C4D5E6F7011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 291DE52F2C3DE74F007F9706 /* swiftyapp */;
+			targetProxy = A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1B2C3D41A2B3C4D5E6F7012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks (Tests) */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXProject section */
 		291DE5282C3DE74F007F9706 /* Project object */ = {
@@ -155,6 +210,7 @@
 			projectRoot = "";
 			targets = (
 				291DE52F2C3DE74F007F9706 /* swiftyapp */,
+				A1B2C3D41A2B3C4D5E6F7003 /* swiftyappTests */,
 			);
 		};
 /* End PBXProject section */
@@ -178,7 +234,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
+			inputPaths = (
+			);
 			name = "Build RustyLib";
+			outputPaths = (
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "set -euxo pipefail\ncd \"${SRCROOT}/..\"\n#./build.sh\n";
@@ -192,6 +252,14 @@
 			files = (
 				291DE5362C3DE74F007F9706 /* ContentView.swift in Sources */,
 				291DE5342C3DE74F007F9706 /* swiftyappApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3D41A2B3C4D5E6F7013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3D41A2B3C4D5E6F7002 /* SwiftyAppTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,7 +492,160 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A1B2C3D41A2B3C4D5E6F7008 /* Build configuration list for PBXNativeTarget "swiftyappTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D41A2B3C4D5E6F7009 /* Debug */,
+				A1B2C3D41A2B3C4D5E6F7010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCBuildConfiguration section */
+		A1B2C3D41A2B3C4D5E6F7009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/Frameworks",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.gnostr.bitcoin-pigeonTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/swiftyapp.app/swiftyapp";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+			};
+			name = Debug;
+		};
+		A1B2C3D41A2B3C4D5E6F7010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path/Frameworks",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "org.gnostr.bitcoin-pigeonTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/swiftyapp.app/swiftyapp";
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
 
 /* Begin XCLocalSwiftPackageReference section */
 		2986A2DF2C3F8F9800D13583 /* XCLocalSwiftPackageReference "Lib/swiftyrustlib" */ = {
