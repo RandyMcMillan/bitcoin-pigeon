@@ -196,8 +196,11 @@ struct ContentView: View {
             } catch is CancellationError {
                 break
             } catch {
+                NSLog("Auto-broadcast failed: \(error.localizedDescription)")
                 await MainActor.run {
-                    autoBroadcastStatus = "Auto-broadcast error: \(error.localizedDescription)"
+                    autoBroadcastStatus = torOnly
+                        ? "autobroadcast waiting for tor connectivity"
+                        : "Auto-broadcast temporarily unavailable."
                 }
             }
 
