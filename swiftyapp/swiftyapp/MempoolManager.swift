@@ -13,11 +13,14 @@ final class MempoolManager: ObservableObject {
     @Published private(set) var entries: [Entry] = []
     @Published private(set) var isLoading = false
     @Published private(set) var lastError: String?
+    @Published private(set) var blockheight: UInt64?
 
     func load(limit: Int = 20, torOnly: Bool = false) async {
         isLoading = true
         lastError = nil
         defer { isLoading = false }
+
+        await refreshBlockheight(torOnly: torOnly)
 
         do {
             let apiTxs = try await fetchRecentMempoolTxs(limit: UInt32(limit), torOnly: torOnly)
@@ -40,6 +43,14 @@ final class MempoolManager: ObservableObject {
             entries = Array(merged.values)
         } catch {
             lastError = error.localizedDescription
+        }
+    }
+
+    func refreshBlockheight(torOnly: Bool) async {
+        do {
+            blockheight = try await fetchBlockheight(torOnly: torOnly)
+        } catch {
+            blockheight = nil
         }
     }
 

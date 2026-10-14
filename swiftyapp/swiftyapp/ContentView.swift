@@ -428,6 +428,27 @@ struct ContentView: View {
                     .foregroundStyle(.red)
             }
 
+            HStack(spacing: 8) {
+                Text("Blockheight:")
+                    .font(.caption.weight(.semibold))
+                if let blockheight = mempoolManager.blockheight {
+                    Text("\(blockheight)")
+                        .font(.caption.monospaced())
+                } else {
+                    Text("—")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Refresh height") {
+                    Task {
+                        await mempoolManager.refreshBlockheight(torOnly: torOnly)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(mempoolManager.entries) { entry in

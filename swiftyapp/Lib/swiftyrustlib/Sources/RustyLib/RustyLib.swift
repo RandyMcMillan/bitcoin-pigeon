@@ -1189,6 +1189,23 @@ public func drainBlastLogs() -> [String] {
 }
 
 /**
+ * Fetch the current Bitcoin blockheight from public mempool APIs.
+ */
+public func fetchBlockheight(torOnly: Bool) async throws -> UInt64 {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_fetch_blockheight(FfiConverterBool.lower(torOnly))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_u64,
+            completeFunc: ffi_rustylib_rust_future_complete_u64,
+            freeFunc: ffi_rustylib_rust_future_free_u64,
+            liftFunc: FfiConverterUInt64.lift,
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
+}
+
+/**
  * Fetch recent transactions from public mempool APIs.
  */
 public func fetchRecentMempoolTxs(limit: UInt32, torOnly: Bool) async throws -> [MempoolTx] {
@@ -1352,6 +1369,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_drain_blast_logs() != 59792 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_fetch_blockheight() != 46347 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_fetch_recent_mempool_txs() != 62012 {

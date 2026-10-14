@@ -362,6 +362,14 @@ pub async fn relay_transactions_ffi(
         .map_err(pigeon_error)
 }
 
+/// Fetch the current Bitcoin blockheight from public mempool APIs.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn fetch_blockheight(tor_only: bool) -> Result<u64, PigeonError> {
+    tx_pigeon::mempool::fetch_blockheight(tor_only)
+        .await
+        .map_err(pigeon_error)
+}
+
 /// Metrics for the bitcoin-pigeon BFT logical clock.
 #[derive(uniffi::Record)]
 pub struct ClockMetrics {
