@@ -33,6 +33,8 @@ enum MempoolSource: String, CaseIterable {
     }
 }
 
+private let duckDuckGoOnionURL = URL(string: "http://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion")!
+
 struct MempoolBroadcastResult {
     let source: MempoolSource
     let txid: String
@@ -70,6 +72,10 @@ func broadcastRandomRecentTransaction(
     relay: Bool,
     logger: ((String) -> Void)? = nil
 ) async throws -> MempoolBroadcastResult {
+    if torOnly {
+        _ = await probeTorConnectivity(logger: logger)
+    }
+
     let sources: [MempoolSource]
     if torOnly {
         sources = [.tor]
@@ -93,8 +99,10 @@ func broadcastRandomRecentTransaction(
             logger?("Auto-broadcast: fetching raw hex for \(tx.txid) from \(source.label)")
             let txHex = try await fetchRawTransactionHex(txid: tx.txid, source: source)
             logger?("Auto-broadcast: blasting \(tx.txid) torOnly=\(torOnly) relay=\(relay)")
+            logger?("Auto-broadcast: relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
             let nodeCount = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
             logger?("Auto-broadcast: blasted \(tx.txid) to \(nodeCount) nodes from \(source.label)")
+            logger?("Auto-broadcast: relay connection cycle completed for \(tx.txid).")
             return MempoolBroadcastResult(source: source, txid: tx.txid, nodeCount: nodeCount)
         } catch {
             logger?("Auto-broadcast: source \(source.label) failed with \(error.localizedDescription)")
@@ -106,6 +114,21 @@ func broadcastRandomRecentTransaction(
         throw lastError
     }
     throw MempoolBroadcastError.noAvailableSources
+}
+
+private func probeTorConnectivity(logger: ((String) -> Void)? = nil) async -> Bool {
+    logger?("Tor probe: checking DuckDuckGo onion reachability.")
+    NSLog("AUTO GET \(duckDuckGoOnionURL.absoluteString)")
+
+    do {
+        let (data, response) = try await URLSession.shared.data(from: duckDuckGoOnionURL)
+        try validateHTTPResponse(response, expectedContentType: nil)
+        logger?("Tor probe: DuckDuckGo onion reachable (\(data.count) bytes).")
+        return true
+    } catch {
+        logger?("Tor probe: DuckDuckGo onion failed with \(error.localizedDescription)")
+        return false
+    }
 }
 
 private func fetchRecentTransactions(from source: MempoolSource) async throws -> [RecentTransaction] {
