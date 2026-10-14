@@ -228,6 +228,7 @@ struct ContentView: View {
             .onChange(of: topicManager.lastReceivedMessage) { _, message in
                 if let message {
                     mempoolManager.addPeerTx(txid: message.txid, hex: message.hex)
+                    appendActivityLog("Consensus mempool received peer tx: \(message.txid)")
                 }
             }
         }
@@ -400,7 +401,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Mempool")
                         .font(.headline)
-                    Text("Recent transactions from public mempool APIs.")
+                    Text("Shared consensus mempool: public APIs + bitcoin-pigeon peers.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

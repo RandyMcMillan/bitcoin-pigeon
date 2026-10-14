@@ -1126,6 +1126,16 @@ public func fetchTransactionHexes(limit: UInt32, torOnly: Bool, relay: Bool) asy
 }
 
 /**
+ * Return the shared bitcoin-pigeon consensus mempool accumulated from
+ * gossipsub messages received by this process.
+ */
+public func getSharedMempoolTxs() -> [MempoolTx] {
+    return try! FfiConverterSequenceTypeMempoolTx.lift(try! rustCall {
+        uniffi_rustylib_fn_func_get_shared_mempool_txs($0)
+    })
+}
+
+/**
  * Continuously fetch and rebroadcast transactions from libre relay peers.
  */
 public func relayTransactionsFfi(limit: UInt32, torOnly: Bool, relay: Bool, intervalSecs: UInt64) async throws {
@@ -1216,6 +1226,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_fetch_transaction_hexes() != 25633 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_get_shared_mempool_txs() != 6688 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_relay_transactions_ffi() != 29646 {
