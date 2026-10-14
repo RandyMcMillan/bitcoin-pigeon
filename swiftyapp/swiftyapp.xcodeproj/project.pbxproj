@@ -13,8 +13,18 @@
 		291DE53B2C3DE74F007F9706 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291DE53A2C3DE74F007F9706 /* Preview Assets.xcassets */; };
 		2986A2E32C3F8FA200D13583 /* RustyLib in Frameworks */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
 		A1B2C3D41A2B3C4D5E6F7002 /* SwiftyAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */; };
-		A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks (Tests) */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
+		A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 291DE5282C3DE74F007F9706 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 291DE52F2C3DE74F007F9706;
+			remoteInfo = swiftyapp;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		291DE5592C3DF1CA007F9706 /* Embed Frameworks */ = {
@@ -31,12 +41,12 @@
 
 /* Begin PBXFileReference section */
 		291DE5302C3DE74F007F9706 /* swiftyapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swiftyapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1B2C3D41A2B3C4D5E6F7007 /* swiftyappTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = swiftyappTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		291DE5332C3DE74F007F9706 /* swiftyappApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = swiftyappApp.swift; sourceTree = "<group>"; };
 		291DE5352C3DE74F007F9706 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		291DE5372C3DE74F007F9706 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		291DE53A2C3DE74F007F9706 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftyAppTests.swift; sourceTree = "<group>"; };
+		A1B2C3D41A2B3C4D5E6F7007 /* swiftyappTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = swiftyappTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +55,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				2986A2E32C3F8FA200D13583 /* RustyLib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1B2C3D41A2B3C4D5E6F7012 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -151,35 +169,6 @@
 		};
 /* End PBXNativeTarget section */
 
-/* Begin PBXContainerItemProxy section */
-		A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 291DE5282C3DE74F007F9706 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 291DE52F2C3DE74F007F9706;
-			remoteInfo = swiftyapp;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXTargetDependency section */
-		A1B2C3D41A2B3C4D5E6F7011 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 291DE52F2C3DE74F007F9706 /* swiftyapp */;
-			targetProxy = A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		A1B2C3D41A2B3C4D5E6F7012 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks (Tests) */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXProject section */
 		291DE5282C3DE74F007F9706 /* Project object */ = {
 			isa = PBXProject;
@@ -264,6 +253,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A1B2C3D41A2B3C4D5E6F7011 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 291DE52F2C3DE74F007F9706 /* swiftyapp */;
+			targetProxy = A1B2C3D41A2B3C4D5E6F7015 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		291DE53C2C3DE74F007F9706 /* Debug */ = {
@@ -471,44 +468,12 @@
 			};
 			name = Release;
 		};
-/* End XCBuildConfiguration section */
-
-/* Begin XCConfigurationList section */
-		291DE52B2C3DE74F007F9706 /* Build configuration list for PBXProject "swiftyapp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				291DE53C2C3DE74F007F9706 /* Debug */,
-				291DE53D2C3DE74F007F9706 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		291DE53E2C3DE74F007F9706 /* Build configuration list for PBXNativeTarget "swiftyapp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				291DE53F2C3DE74F007F9706 /* Debug */,
-				291DE5402C3DE74F007F9706 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A1B2C3D41A2B3C4D5E6F7008 /* Build configuration list for PBXNativeTarget "swiftyappTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A1B2C3D41A2B3C4D5E6F7009 /* Debug */,
-				A1B2C3D41A2B3C4D5E6F7010 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-/* End XCConfigurationList section */
-
-/* Begin XCBuildConfiguration section */
 		A1B2C3D41A2B3C4D5E6F7009 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -539,6 +504,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = M684FYCYG6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -570,7 +536,6 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/swiftyapp.app/swiftyapp";
-				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Debug;
 		};
@@ -579,6 +544,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -609,6 +575,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = M684FYCYG6;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -640,12 +607,41 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/swiftyapp.app/swiftyapp";
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		291DE52B2C3DE74F007F9706 /* Build configuration list for PBXProject "swiftyapp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				291DE53C2C3DE74F007F9706 /* Debug */,
+				291DE53D2C3DE74F007F9706 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		291DE53E2C3DE74F007F9706 /* Build configuration list for PBXNativeTarget "swiftyapp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				291DE53F2C3DE74F007F9706 /* Debug */,
+				291DE5402C3DE74F007F9706 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D41A2B3C4D5E6F7008 /* Build configuration list for PBXNativeTarget "swiftyappTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D41A2B3C4D5E6F7009 /* Debug */,
+				A1B2C3D41A2B3C4D5E6F7010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
 		2986A2DF2C3F8F9800D13583 /* XCLocalSwiftPackageReference "Lib/swiftyrustlib" */ = {
