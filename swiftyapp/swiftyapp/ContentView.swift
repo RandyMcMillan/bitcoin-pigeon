@@ -9,6 +9,16 @@ import SwiftUI
 import RustyLib
 
 struct ContentView: View {
+    private enum MainPaneMode {
+        case compose
+        case logging
+    }
+
+    private struct ActivityLogEntry: Identifiable {
+        let id = UUID()
+        let message: String
+    }
+
     private let defaultProtocolPrefix = "/gnostr"
     private let defaultProtocolVersion = "0.0.1"
 
@@ -19,6 +29,8 @@ struct ContentView: View {
     @State private var protocolVersion = "0.0.1"
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
     @State private var autoBroadcastStatus = "Auto-broadcast idle."
+    @State private var activityLog: [ActivityLogEntry] = []
+    @State private var mainPaneMode: MainPaneMode = .compose
     @State private var isWorking = false
     @State private var showingSettings = false
     @FocusState private var isTxHexFocused: Bool
@@ -39,33 +51,13 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        //Text("Transaction input")
-                        //    .font(.headline)
-
-                        TextEditor(text: $txHex)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: 220, maxHeight: .infinity)
-                            .focused($isTxHexFocused)
-                            .scrollContentBackground(.hidden)
-                            .background(isTxHexFocused ? Color.black.opacity(0.18) : Color.clear)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(transactionHexBorderColor, lineWidth: transactionHexBorderWidth)
-                            )
-                        if let transactionHexValidationMessage {
-                            Text(transactionHexValidationMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
+                    Group {
+                        if mainPaneMode == .compose {
+                            composePane
                         } else {
-                            Text(" ")
-                                .font(.footnote)
+                            loggingPane
                         }
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 16) {
@@ -178,9 +170,76 @@ struct ContentView: View {
         }
     }
 
+    private var composePane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TextEditor(text: $txHex)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 220, maxHeight: .infinity)
+                .focused($isTxHexFocused)
+                .scrollContentBackground(.hidden)
+                .background(isTxHexFocused ? Color.black.opacity(0.18) : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(transactionHexBorderColor, lineWidth: transactionHexBorderWidth)
+                )
+            if let transactionHexValidationMessage {
+                Text(transactionHexValidationMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            } else {
+                Text(" ")
+                    .font(.footnote)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var loggingPane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Network activity log")
+                        .font(.headline)
+                    Text("Auto rebroadcasting, mempool fetches, and delivery events.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Edit transaction") {
+                    mainPaneMode = .compose
+                }
+                .buttonStyle(.bordered)
+            }
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(activityLog) { entry in
+                        Text(entry.message)
+                            .font(.footnote.monospaced())
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(8)
+            .background(Color.black.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
     private func autoBroadcastLoop() async {
         await MainActor.run {
             autoBroadcastStatus = "Auto-broadcast running."
+            appendActivityLog("Auto-broadcast loop started.")
         }
 
         while !Task.isCancelled {
@@ -189,9 +248,18 @@ struct ContentView: View {
             setTorOnly(enabled: torOnly)
 
             do {
-                let result = try await broadcastRandomRecentTransaction(torOnly: torOnly, relay: relay)
+                let result = try await broadcastRandomRecentTransaction(
+                    torOnly: torOnly,
+                    relay: relay,
+                    logger: { message in
+                        Task { @MainActor in
+                            appendActivityLog(message)
+                        }
+                    }
+                )
                 await MainActor.run {
                     autoBroadcastStatus = "Auto-broadcasted \(result.txid) from \(result.source.label) to \(result.nodeCount) nodes."
+                    appendActivityLog("Auto-broadcast success: \(result.txid) via \(result.source.label) to \(result.nodeCount) nodes.")
                 }
             } catch is CancellationError {
                 break
@@ -201,6 +269,7 @@ struct ContentView: View {
                     autoBroadcastStatus = torOnly
                         ? "autobroadcast waiting for tor connectivity"
                         : "Auto-broadcast temporarily unavailable."
+                    appendActivityLog("Auto-broadcast failed: \(error.localizedDescription)")
                 }
             }
 
@@ -218,12 +287,17 @@ struct ContentView: View {
         isWorking = true
         defer { isWorking = false }
         setTorOnly(enabled: torOnly)
+        appendActivityLog("Manual blast requested.")
+        appendActivityLog("Manual blast torOnly=\(torOnly) relay=\(relay)")
 
         do {
             let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly, relay: relay)
             statusMessage = "Delivered to \(count) libre relay nodes. relay=\(relay ? "on" : "off") torOnly=\(torOnly ? "on" : "off")\(protocolStatusSuffix)"
+            appendActivityLog("Manual blast succeeded: delivered to \(count) nodes.")
+            mainPaneMode = .logging
         } catch {
             statusMessage = error.localizedDescription
+            appendActivityLog("Manual blast failed: \(error.localizedDescription)")
         }
     }
 
@@ -269,6 +343,24 @@ struct ContentView: View {
         let version = protocolVersion.isEmpty ? "0.0.1" : protocolVersion
         return " protocol=\(composeProtocolID(prefix: prefix, version: version))"
     }
+
+    @MainActor
+    private func appendActivityLog(_ message: String) {
+        let timestamp = Self.activityLogFormatter.string(from: Date())
+        activityLog.append(ActivityLogEntry(message: "[\(timestamp)] \(message)"))
+        if activityLog.count > 200 {
+            activityLog.removeFirst(activityLog.count - 200)
+        }
+        if mainPaneMode == .compose && message.contains("succeeded") {
+            mainPaneMode = .logging
+        }
+    }
+
+    private static let activityLogFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 }
 
 #Preview {
