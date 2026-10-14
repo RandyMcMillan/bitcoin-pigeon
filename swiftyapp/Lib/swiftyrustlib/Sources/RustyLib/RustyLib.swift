@@ -1268,6 +1268,15 @@ public func getSharedMempoolTxs() -> [MempoolTx] {
 }
 
 /**
+ * Return the number of peers connected to the time sync daemon.
+ */
+public func getTimeSyncPeerCount() -> UInt32 {
+    return try! FfiConverterUInt32.lift(try! rustCall {
+        uniffi_rustylib_fn_func_get_time_sync_peer_count($0)
+    })
+}
+
+/**
  * Continuously fetch and rebroadcast transactions from libre relay peers.
  */
 public func relayTransactionsFfi(limit: UInt32, torOnly: Bool, relay: Bool, intervalSecs: UInt64) async throws {
@@ -1328,6 +1337,9 @@ public func spawnTopicNetworkFfi(label: String, torOnly: Bool, config: TopicConf
 
 /**
  * Start the P2P BFT time synchronization daemon.
+ *
+ * Spawns the long-running daemon on the Tokio runtime and returns immediately
+ * so callers can treat it as an on/off toggle.
  */
 public func startTimeSyncDaemon(storagePath: String?) async throws {
     return
@@ -1389,6 +1401,9 @@ private var initializationResult: InitializationResult = {
     if uniffi_rustylib_checksum_func_get_shared_mempool_txs() != 6688 {
         return InitializationResult.apiChecksumMismatch
     }
+    if uniffi_rustylib_checksum_func_get_time_sync_peer_count() != 19873 {
+        return InitializationResult.apiChecksumMismatch
+    }
     if uniffi_rustylib_checksum_func_relay_transactions_ffi() != 29646 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1401,7 +1416,7 @@ private var initializationResult: InitializationResult = {
     if uniffi_rustylib_checksum_func_spawn_topic_network_ffi() != 3790 {
         return InitializationResult.apiChecksumMismatch
     }
-    if uniffi_rustylib_checksum_func_start_time_sync_daemon() != 4953 {
+    if uniffi_rustylib_checksum_func_start_time_sync_daemon() != 51945 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_method_topicnetwork_local_peer_id() != 63299 {
