@@ -2,6 +2,8 @@ use std::collections::VecDeque;
 use std::io::{self, Write};
 use std::sync::{Mutex, OnceLock};
 
+use rand::seq::SliceRandom;
+
 uniffi::setup_scaffolding!();
 
 #[derive(Debug, uniffi::Error)]
@@ -86,6 +88,36 @@ pub async fn blast_transaction_hex(
     tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay, None)
         .await
         .map(|count| count as u32)
+        .map_err(|error| BlastTransactionError::Message {
+            message: error.to_string(),
+        })
+}
+
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn auto_broadcast_recent_transaction(
+    tor_only: bool,
+    relay: bool,
+) -> Result<u32, BlastTransactionError> {
+    ensure_log_capture();
+    let txs = tx_pigeon::mempool::fetch_recent_tx_hexes(20, tor_only)
+        .await
+        .map_err(|error| BlastTransactionError::Message {
+            message: error.to_string(),
+        })?;
+
+    let (txid, tx_hex) = txs
+        .choose(&mut rand::rng())
+        .cloned()
+        .ok_or_else(|| BlastTransactionError::Message {
+            message: "no recent transactions were available for auto-broadcast".to_string(),
+        })?;
+
+    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay, None)
+        .await
+        .map(|count| {
+            let _ = txid;
+            count as u32
+        })
         .map_err(|error| BlastTransactionError::Message {
             message: error.to_string(),
         })
