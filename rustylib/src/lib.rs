@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 use std::io::{self, Write};
 use std::sync::{Mutex, OnceLock};
 
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 use tracing::info;
 
 uniffi::setup_scaffolding!();
