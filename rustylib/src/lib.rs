@@ -3,6 +3,7 @@ use std::io::{self, Write};
 use std::sync::{Mutex, OnceLock};
 
 use rand::seq::SliceRandom;
+use tracing::info;
 
 uniffi::setup_scaffolding!();
 
@@ -112,12 +113,11 @@ pub async fn auto_broadcast_recent_transaction(
             message: "no recent transactions were available for auto-broadcast".to_string(),
         })?;
 
+    info!(%txid, "Rust auto-broadcast selected recent transaction");
+
     tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay, None)
         .await
-        .map(|count| {
-            let _ = txid;
-            count as u32
-        })
+        .map(|count| count as u32)
         .map_err(|error| BlastTransactionError::Message {
             message: error.to_string(),
         })
