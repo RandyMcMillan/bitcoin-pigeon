@@ -77,8 +77,9 @@ private func validateHTTPResponse(_ response: URLResponse, expectedContentType: 
 }
 
 private func mempoolBaseURL(torOnly: Bool) -> URL {
-    if torOnly {
-        return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
-    }
+    // Disabled: mempool onion endpoint is not currently available.
+    // if torOnly {
+    //     return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
+    // }
     return URL(string: "https://mempool.space")!
 }

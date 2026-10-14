@@ -8,7 +8,7 @@ private struct RecentTransaction: Decodable {
 enum MempoolSource: String, CaseIterable {
     case clearnet
     case bitcoinGobSV
-    case tor
+    // case tor
 
     var label: String {
         switch self {
@@ -16,8 +16,8 @@ enum MempoolSource: String, CaseIterable {
             return "mempool.space"
         case .bitcoinGobSV:
             return "bitcoin.gob.sv"
-        case .tor:
-            return "mempool onion"
+        // case .tor:
+        //     return "mempool onion"
         }
     }
 
@@ -27,13 +27,14 @@ enum MempoolSource: String, CaseIterable {
             return URL(string: "https://mempool.space")!
         case .bitcoinGobSV:
             return URL(string: "https://bitcoin.gob.sv")!
-        case .tor:
-            return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
+        // case .tor:
+        //     return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
         }
     }
 }
 
-private let duckDuckGoOnionURL = URL(string: "http://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion")!
+// Disabled: mempool onion endpoint is not currently available.
+// private let duckDuckGoOnionURL = URL(string: "http://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion")!
 
 struct MempoolBroadcastResult {
     let source: MempoolSource
@@ -72,13 +73,16 @@ func broadcastRandomRecentTransaction(
     relay: Bool,
     logger: ((String) -> Void)? = nil
 ) async throws -> MempoolBroadcastResult {
-    if torOnly {
-        _ = await probeTorConnectivity(logger: logger)
-    }
+    // Disabled: mempool onion endpoint is not currently available.
+    // if torOnly {
+    //     _ = await probeTorConnectivity(logger: logger)
+    // }
 
     let sources: [MempoolSource]
     if torOnly {
-        sources = [.tor]
+        // Disabled: mempool onion endpoint is not currently available.
+        // sources = [.tor]
+        sources = []
     } else {
         sources = MempoolSource.allCases.shuffled()
     }
@@ -121,20 +125,21 @@ func broadcastRandomRecentTransaction(
     throw MempoolBroadcastError.noAvailableSources
 }
 
-private func probeTorConnectivity(logger: ((String) -> Void)? = nil) async -> Bool {
-    logger?("Tor probe: checking DuckDuckGo onion reachability.")
-    NSLog("AUTO GET \(duckDuckGoOnionURL.absoluteString)")
-
-    do {
-        let (data, response) = try await URLSession.shared.data(from: duckDuckGoOnionURL)
-        try validateHTTPResponse(response, expectedContentType: nil)
-        logger?("Tor probe: DuckDuckGo onion reachable (\(data.count) bytes).")
-        return true
-    } catch {
-        logger?("Tor probe: DuckDuckGo onion failed with \(error.localizedDescription)")
-        return false
-    }
-}
+// Disabled: mempool onion endpoint is not currently available.
+// private func probeTorConnectivity(logger: ((String) -> Void)? = nil) async -> Bool {
+//     logger?("Tor probe: checking DuckDuckGo onion reachability.")
+//     NSLog("AUTO GET \(duckDuckGoOnionURL.absoluteString)")
+//
+//     do {
+//         let (data, response) = try await URLSession.shared.data(from: duckDuckGoOnionURL)
+//         try validateHTTPResponse(response, expectedContentType: nil)
+//         logger?("Tor probe: DuckDuckGo onion reachable (\(data.count) bytes).")
+//         return true
+//     } catch {
+//         logger?("Tor probe: DuckDuckGo onion failed with \(error.localizedDescription)")
+//         return false
+//     }
+// }
 
 private func fetchRecentTransactions(from source: MempoolSource) async throws -> [RecentTransaction] {
     let url = source.baseURL.appendingPathComponent("api/mempool/recent")
