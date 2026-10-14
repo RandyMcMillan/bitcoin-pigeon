@@ -24,6 +24,15 @@
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSTemporaryExceptionMinimumTLSVersion</key>
+				<string>TLSv1.0</string>
+			</dict>
 			<key>mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion</key>
 			<dict>
 				<key>NSIncludesSubdomains</key>
