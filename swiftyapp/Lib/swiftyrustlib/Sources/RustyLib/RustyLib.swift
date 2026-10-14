@@ -556,6 +556,20 @@ private func uniffiFutureContinuationCallback(handle: UInt64, pollResult: Int8) 
     }
 }
 
+public func autoBroadcastRecentTransaction(torOnly: Bool, relay: Bool) async throws -> UInt32 {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_auto_broadcast_recent_transaction(FfiConverterBool.lower(torOnly), FfiConverterBool.lower(relay))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_u32,
+            completeFunc: ffi_rustylib_rust_future_complete_u32,
+            freeFunc: ffi_rustylib_rust_future_free_u32,
+            liftFunc: FfiConverterUInt32.lift,
+            errorHandler: FfiConverterTypeBlastTransactionError.lift
+        )
+}
+
 public func blastTransactionHex(txHex: String, torOnly: Bool, relay: Bool) async throws -> UInt32 {
     return
         try await uniffiRustCallAsync(
@@ -599,6 +613,9 @@ private var initializationResult: InitializationResult = {
     let scaffolding_contract_version = ffi_rustylib_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
+    }
+    if uniffi_rustylib_checksum_func_auto_broadcast_recent_transaction() != 58814 {
+        return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_blast_transaction_hex() != 33064 {
         return InitializationResult.apiChecksumMismatch
