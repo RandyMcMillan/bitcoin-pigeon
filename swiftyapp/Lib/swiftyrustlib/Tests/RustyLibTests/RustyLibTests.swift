@@ -40,7 +40,8 @@ private struct RecentTransaction: Decodable {
 }
 
 private func fetchRecentTransactions() async throws -> [RecentTransaction] {
-    let url = URL(string: "https://mempool.space/api/mempool/recent")!
+    let url = mempoolBaseURL(torOnly: ProcessInfo.processInfo.environment["TOR_ONLY"] == "1")
+        .appendingPathComponent("api/mempool/recent")
     NSLog("GET \(url.absoluteString)")
     let (data, response) = try await URLSession.shared.data(from: url)
     try validateHTTPResponse(response, expectedContentType: nil)
@@ -48,7 +49,8 @@ private func fetchRecentTransactions() async throws -> [RecentTransaction] {
 }
 
 private func fetchRawTransactionHex(txid: String) async throws -> String {
-    let url = URL(string: "https://mempool.space/api/tx/\(txid)/hex")!
+    let url = mempoolBaseURL(torOnly: ProcessInfo.processInfo.environment["TOR_ONLY"] == "1")
+        .appendingPathComponent("api/tx/\(txid)/hex")
     NSLog("GET \(url.absoluteString)")
     let (data, response) = try await URLSession.shared.data(from: url)
     try validateHTTPResponse(response, expectedContentType: "text/plain")
@@ -72,4 +74,11 @@ private func validateHTTPResponse(_ response: URLResponse, expectedContentType: 
             "expected content type to include \(expectedContentType), got \(contentType)"
         )
     }
+}
+
+private func mempoolBaseURL(torOnly: Bool) -> URL {
+    if torOnly {
+        return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
+    }
+    return URL(string: "https://mempool.space")!
 }
