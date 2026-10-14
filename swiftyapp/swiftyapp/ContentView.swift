@@ -158,6 +158,11 @@ struct ContentView: View {
                 .frame(height: panelHeight)
                 .padding(.horizontal)
             }
+            .overlay(alignment: .bottomTrailing) {
+                protocolBadge
+                    .padding(.trailing, proxy.size.width < 500 ? 10 : 18)
+                    .padding(.bottom, proxy.size.height < 700 ? 10 : 18)
+            }
             .contentShape(Rectangle())
             .onTapGesture {
                 isTxHexFocused = false
@@ -405,6 +410,28 @@ struct ContentView: View {
 
     private var transactionHexBorderWidth: CGFloat {
         normalizedTxHex.isEmpty ? 1 : 2
+    }
+
+    private var protocolBadgeText: String {
+        let prefix = protocolPrefix.isEmpty ? defaultProtocolPrefix : protocolPrefix
+        let version = protocolVersion.isEmpty ? Self.appVersion : protocolVersion
+        return composeProtocolID(prefix: prefix, version: version)
+    }
+
+    private var protocolBadge: some View {
+        Text(protocolBadgeText)
+            .font(.caption2.weight(.semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.ultraThinMaterial, in: Capsule())
+            .overlay(
+                Capsule()
+                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.16), radius: 6, x: 0, y: 2)
     }
 
     private var protocolStatusSuffix: String {
