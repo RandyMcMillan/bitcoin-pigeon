@@ -195,7 +195,7 @@ impl TopicConfig {
 /// FFI-friendly event emitted by a topic node.
 #[derive(uniffi::Enum)]
 pub enum TopicEvent {
-    Message { txid: String },
+    Message { txid: String, hex: String },
     Subscribed { peer_id: String },
     Unsubscribed { peer_id: String },
     PeerDiscovered { peer_id: String, addr: String },
@@ -207,7 +207,7 @@ pub enum TopicEvent {
 impl From<RustTopicEvent> for TopicEvent {
     fn from(event: RustTopicEvent) -> Self {
         match event {
-            RustTopicEvent::Message { txid } => TopicEvent::Message { txid },
+            RustTopicEvent::Message { txid, hex } => TopicEvent::Message { txid, hex },
             RustTopicEvent::Subscribed { peer_id } => TopicEvent::Subscribed { peer_id },
             RustTopicEvent::Unsubscribed { peer_id } => TopicEvent::Unsubscribed { peer_id },
             RustTopicEvent::PeerDiscovered { peer_id, addr } => {
@@ -318,6 +318,16 @@ pub async fn fetch_recent_mempool_txs(
         .into_iter()
         .map(|(txid, hex)| MempoolTx { txid, hex })
         .collect())
+}
+
+/// Return the shared bitcoin-pigeon consensus mempool accumulated from
+/// gossipsub messages received by this process.
+#[uniffi::export]
+pub fn get_shared_mempool_txs() -> Vec<MempoolTx> {
+    tx_pigeon::topic::get_shared_mempool_txs()
+        .into_iter()
+        .map(|(txid, hex)| MempoolTx { txid, hex })
+        .collect()
 }
 
 /// Compose a gossipsub protocol id from a prefix and version.
