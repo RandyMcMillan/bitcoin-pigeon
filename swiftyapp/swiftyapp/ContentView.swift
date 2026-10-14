@@ -31,6 +31,7 @@ struct ContentView: View {
     @State private var autoBroadcastStatus = "Auto-broadcast idle."
     @State private var activityLog: [ActivityLogEntry] = []
     @State private var mainPaneMode: MainPaneMode = .compose
+    @State private var didStartAutoBroadcast = false
     @State private var isWorking = false
     @State private var showingSettings = false
     @FocusState private var isTxHexFocused: Bool
@@ -131,8 +132,8 @@ struct ContentView: View {
             .onTapGesture {
                 isTxHexFocused = false
             }
-            .task {
-                await autoBroadcastLoop()
+            .onAppear {
+                startAutoBroadcastLoopIfNeeded()
             }
             .sheet(isPresented: $showingSettings) {
                 NavigationStack {
@@ -234,6 +235,16 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func startAutoBroadcastLoopIfNeeded() {
+        guard !didStartAutoBroadcast else {
+            return
+        }
+        didStartAutoBroadcast = true
+        Task {
+            await autoBroadcastLoop()
+        }
     }
 
     private func autoBroadcastLoop() async {
