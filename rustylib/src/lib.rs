@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 uniffi::setup_scaffolding!();
 
 #[derive(Debug, uniffi::Error)]
@@ -16,6 +18,11 @@ impl std::fmt::Display for BlastTransactionError {
 
 impl std::error::Error for BlastTransactionError {}
 
+#[uniffi::export(rust, foreign)]
+pub trait BlastTransactionLogSink: Send + Sync + std::fmt::Debug {
+    fn log(&self, message: String) -> Result<(), BlastTransactionError>;
+}
+
 #[uniffi::export]
 pub fn set_tor_only(enabled: bool) {
     tx_pigeon::set_tor_only(enabled);
@@ -27,7 +34,29 @@ pub async fn blast_transaction_hex(
     tor_only: bool,
     relay: bool,
 ) -> Result<u32, BlastTransactionError> {
-    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay)
+    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay, None)
+        .await
+        .map(|count| count as u32)
+        .map_err(|error| BlastTransactionError::Message {
+            message: error.to_string(),
+        })
+}
+
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn blast_transaction_hex_with_logs(
+    tx_hex: String,
+    tor_only: bool,
+    relay: bool,
+    logger: Arc<dyn BlastTransactionLogSink>,
+) -> Result<u32, BlastTransactionError> {
+    let forwarder = {
+        let logger = Arc::clone(&logger);
+        Arc::new(move |message: String| {
+            let _ = logger.log(message);
+        }) as Arc<dyn Fn(String) + Send + Sync>
+    };
+
+    tx_pigeon::blast_transaction_hex(&tx_hex, tor_only, relay, Some(forwarder))
         .await
         .map(|count| count as u32)
         .map_err(|error| BlastTransactionError::Message {
