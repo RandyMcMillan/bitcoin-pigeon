@@ -294,6 +294,7 @@ struct ContentView: View {
             do {
                 await MainActor.run {
                     appendActivityLog("Auto-broadcast attempting fetch and rebroadcast.")
+                    appendActivityLog("Auto-broadcast relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
                 }
                 let result = try await broadcastRandomRecentTransaction(
                     torOnly: torOnly,
@@ -323,9 +324,13 @@ struct ContentView: View {
             }
 
             await MainActor.run {
-                appendActivityLog("Auto-broadcast retrying immediately.")
+                appendActivityLog("Auto-broadcast retrying in 250 ms.")
             }
-            await Task.yield()
+            do {
+                try await Task.sleep(nanoseconds: 250_000_000)
+            } catch {
+                break
+            }
         }
     }
 
@@ -338,12 +343,14 @@ struct ContentView: View {
         appendActivityLog("Manual blast requested.")
         appendActivityLog("Manual blast opened the network activity log.")
         appendActivityLog("Manual blast torOnly=\(torOnly) relay=\(relay)")
+        appendActivityLog("Manual blast relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
 
         do {
             appendActivityLog("Manual blast submitting transaction hex to the network.")
             let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly, relay: relay)
             statusMessage = "Delivered to \(count) libre relay nodes. relay=\(relay ? "on" : "off") torOnly=\(torOnly ? "on" : "off")\(protocolStatusSuffix)"
             appendActivityLog("Manual blast succeeded: delivered to \(count) nodes.")
+            appendActivityLog("Manual blast relay connection cycle completed.")
         } catch {
             statusMessage = error.localizedDescription
             appendActivityLog("Manual blast failed: \(error.localizedDescription)")
