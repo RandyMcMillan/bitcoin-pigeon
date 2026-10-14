@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var protocolPrefix = "/gnostr"
     @State private var protocolVersion = "0.0.1"
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
+    @State private var autoBroadcastStatus = "Auto-broadcast idle."
     @State private var isWorking = false
     @State private var showingSettings = false
     @FocusState private var isTxHexFocused: Bool
@@ -99,6 +100,9 @@ struct ContentView: View {
                         .disabled(isWorking || normalizedTxHex.isEmpty)
 
                         Text(statusMessage)
+                        Text(autoBroadcastStatus)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,6 +130,9 @@ struct ContentView: View {
             .contentShape(Rectangle())
             .onTapGesture {
                 isTxHexFocused = false
+            }
+            .task {
+                await autoBroadcastLoop()
             }
             .sheet(isPresented: $showingSettings) {
                 NavigationStack {
@@ -159,6 +166,38 @@ struct ContentView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private func autoBroadcastLoop() async {
+        await MainActor.run {
+            autoBroadcastStatus = "Auto-broadcast running."
+        }
+
+        while !Task.isCancelled {
+            let torOnly = await MainActor.run { self.torOnly }
+            let relay = await MainActor.run { self.relay }
+            setTorOnly(enabled: torOnly)
+
+            do {
+                let result = try await broadcastRandomRecentTransaction(torOnly: torOnly, relay: relay)
+                await MainActor.run {
+                    autoBroadcastStatus = "Auto-broadcasted \(result.txid) from \(result.source.label) to \(result.nodeCount) nodes."
+                }
+            } catch is CancellationError {
+                break
+            } catch {
+                await MainActor.run {
+                    autoBroadcastStatus = "Auto-broadcast error: \(error.localizedDescription)"
+                }
+            }
+
+            let sleepSeconds = UInt64.random(in: 45...120)
+            do {
+                try await Task.sleep(nanoseconds: sleepSeconds * 1_000_000_000)
+            } catch {
+                break
             }
         }
     }
