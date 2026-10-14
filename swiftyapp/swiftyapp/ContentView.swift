@@ -67,6 +67,7 @@ struct ContentView: View {
         GeometryReader { proxy in
             let panelWidth = min(proxy.size.width * 0.84, 760)
             let panelHeight = min(proxy.size.height * 0.84, 980)
+            let backgroundAlignment: Alignment = proxy.size.width > proxy.size.height ? .top : .center
 
             ZStack(alignment: .center) {
                 Image(torOnly ? "icon-tor" : "icon-tor-gray")
@@ -74,7 +75,7 @@ struct ContentView: View {
                     .scaledToFill()
                     .frame(width: proxy.size.width,
                            height: proxy.size.height,
-                           alignment: .center)
+                           alignment: backgroundAlignment)
                     .scaleEffect(1.1)
                     .ignoresSafeArea()
 
