@@ -2,10 +2,10 @@
 
 set -eu
 
-SCHEME="Disk Inventory X"
-WORKSPACE="workspace.xcworkspace"
+PROJECT="swiftyapp/swiftyapp.xcodeproj"
+SCHEME="swiftyapp"
 BUILD_DIR="$(pwd)/build"
-APP_NAME="bitcoin-pigeon.app"
+APP_NAME="swiftyapp.app"
 APP_PATH="$BUILD_DIR/Release/$APP_NAME"
 
 CHECK_ONLY=0
@@ -70,7 +70,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$CHECK_ONLY" -eq 0 ] && [ -z "$TAG" ]; then
-  TAG_VERSION=$(xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk '/MARKETING_VERSION/{print $3; exit}')
+  TAG_VERSION=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk '/MARKETING_VERSION/{print $3; exit}')
   if [ -z "$TAG_VERSION" ]; then
     echo "Unable to determine MARKETING_VERSION from the Xcode project." >&2
     exit 1
@@ -113,7 +113,7 @@ if [ -z "$SIGNING_IDENTITY" ]; then
 fi
 
 if [ -z "$TEAM_ID" ]; then
-  TEAM_ID=$(xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk '/DEVELOPMENT_TEAM/{print $3; exit}')
+  TEAM_ID=$(xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk '/DEVELOPMENT_TEAM/{print $3; exit}')
 fi
 if [ -z "$TEAM_ID" ]; then
   TEAM_ID="M684FYCYG6"
@@ -148,7 +148,7 @@ if [ "$NOTARIZE" -eq 1 ]; then
     exit 1
   fi
 
-  NOTARIZE_ZIP="$BUILD_DIR/Disk-Inventory-X-${TAG}-notarize.zip"
+  NOTARIZE_ZIP="$BUILD_DIR/bitcoin-pigeon-${TAG}-notarize.zip"
   ditto -c -k --keepParent "$APP_PATH" "$NOTARIZE_ZIP"
   xcrun notarytool submit "$NOTARIZE_ZIP" \
     --apple-id "$APPLE_ID" \
@@ -170,7 +170,7 @@ if gh release view "$TAG" >/dev/null 2>&1; then
   gh release upload "$TAG" "$ZIP_NAME" --clobber
 else
   gh release create "$TAG" \
-    --title "Disk Inventory X ${TAG}" \
+    --title "bitcoin-pigeon ${TAG}" \
     --generate-notes \
     "$ZIP_NAME"
 fi
