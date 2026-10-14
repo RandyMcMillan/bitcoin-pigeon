@@ -100,6 +100,11 @@ func broadcastRandomRecentTransaction(
             let txHex = try await fetchRawTransactionHex(txid: tx.txid, source: source)
             logger?("Auto-broadcast: blasting \(tx.txid) torOnly=\(torOnly) relay=\(relay)")
             logger?("Auto-broadcast: relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
+            defer {
+                for line in drainBlastLogs() {
+                    logger?(line)
+                }
+            }
             let nodeCount = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
             logger?("Auto-broadcast: blasted \(tx.txid) to \(nodeCount) nodes from \(source.label)")
             logger?("Auto-broadcast: relay connection cycle completed for \(tx.txid).")

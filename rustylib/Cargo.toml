@@ -12,8 +12,10 @@ name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
 
 [dependencies]
-tx-pigeon = { version = "0.1.0", path = "../tx-pigeon" }
+tx-pigeon = { version = "0.2.0", path = "../tx-pigeon" }
 uniffi = { version = "0.28.0", features = [ "cli", "tokio" ] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter"] }
 
 [build-dependencies]
 uniffi = { version = "0.28.0", features = [ "build" ] }

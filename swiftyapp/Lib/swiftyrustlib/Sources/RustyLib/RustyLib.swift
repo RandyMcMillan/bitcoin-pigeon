@@ -487,6 +487,28 @@ extension BlastTransactionError: Foundation.LocalizedError {
     }
 }
 
+private struct FfiConverterSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]
+
+    static func write(_ value: [String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterString.write(item, into: &buf)
+        }
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [String]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            try seq.append(FfiConverterString.read(from: &buf))
+        }
+        return seq
+    }
+}
+
 private let UNIFFI_RUST_FUTURE_POLL_READY: Int8 = 0
 private let UNIFFI_RUST_FUTURE_POLL_MAYBE_READY: Int8 = 1
 
@@ -548,6 +570,12 @@ public func blastTransactionHex(txHex: String, torOnly: Bool, relay: Bool) async
         )
 }
 
+public func drainBlastLogs() -> [String] {
+    return try! FfiConverterSequenceString.lift(try! rustCall {
+        uniffi_rustylib_fn_func_drain_blast_logs($0)
+    })
+}
+
 public func setTorOnly(enabled: Bool) {
     try! rustCall {
         uniffi_rustylib_fn_func_set_tor_only(
@@ -573,6 +601,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.contractVersionMismatch
     }
     if uniffi_rustylib_checksum_func_blast_transaction_hex() != 33064 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_drain_blast_logs() != 59792 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_set_tor_only() != 5779 {

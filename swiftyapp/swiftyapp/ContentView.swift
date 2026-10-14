@@ -346,6 +346,9 @@ struct ContentView: View {
         appendActivityLog("Manual blast relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
 
         do {
+            defer {
+                appendCapturedRustLogs()
+            }
             appendActivityLog("Manual blast submitting transaction hex to the network.")
             let count = try await blastTransactionHex(txHex: normalizedTxHex, torOnly: torOnly, relay: relay)
             statusMessage = "Delivered to \(count) libre relay nodes. relay=\(relay ? "on" : "off") torOnly=\(torOnly ? "on" : "off")\(protocolStatusSuffix)"
@@ -354,6 +357,13 @@ struct ContentView: View {
         } catch {
             statusMessage = error.localizedDescription
             appendActivityLog("Manual blast failed: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private func appendCapturedRustLogs() {
+        for line in drainBlastLogs() {
+            appendActivityLog(line)
         }
     }
 
