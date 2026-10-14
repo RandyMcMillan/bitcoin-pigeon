@@ -17,6 +17,8 @@ uniffi = { version = "0.28.0", features = [ "cli", "tokio" ] }
 rand = "0.9.1"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["fmt", "env-filter"] }
+tokio = { version = "1", features = ["sync"] }
+bitcoin = "0.32.5"
 
 [build-dependencies]
 uniffi = { version = "0.28.0", features = [ "build" ] }

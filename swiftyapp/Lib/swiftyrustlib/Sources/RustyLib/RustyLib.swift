@@ -394,6 +394,19 @@ private struct FfiConverterUInt32: FfiConverterPrimitive {
     }
 }
 
+private struct FfiConverterUInt64: FfiConverterPrimitive {
+    typealias FfiType = UInt64
+    typealias SwiftType = UInt64
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt64 {
+        return try lift(readInt(&buf))
+    }
+
+    static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
 private struct FfiConverterBool: FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -453,6 +466,243 @@ private struct FfiConverterString: FfiConverter {
     }
 }
 
+/**
+ * Handle to a spawned topic network. Keeps the swarm alive and exposes a
+ * non-blocking event channel.
+ */
+public protocol TopicNetworkProtocol: AnyObject {
+    /**
+     * Local peer id as a base58 string.
+     */
+    func localPeerId() -> String?
+
+    /**
+     * Publish a transaction (hex) to the topic.
+     */
+    func publish(txHex: String) async throws
+
+    /**
+     * Poll for the next event, returning immediately if none is available.
+     */
+    func tryNextEvent() -> TopicEvent?
+}
+
+/**
+ * Handle to a spawned topic network. Keeps the swarm alive and exposes a
+ * non-blocking event channel.
+ */
+open class TopicNetwork:
+    TopicNetworkProtocol
+{
+    fileprivate let pointer: UnsafeMutableRawPointer!
+
+    /// Used to instantiate a [FFIObject] without an actual pointer, for fakes in tests, mostly.
+    public struct NoPointer {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+    public required init(unsafeFromRawPointer pointer: UnsafeMutableRawPointer) {
+        self.pointer = pointer
+    }
+
+    /// This constructor can be used to instantiate a fake object.
+    /// - Parameter noPointer: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    ///
+    /// - Warning:
+    ///     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing [Pointer] the FFI lower functions will crash.
+    public init(noPointer _: NoPointer) {
+        pointer = nil
+    }
+
+    public func uniffiClonePointer() -> UnsafeMutableRawPointer {
+        return try! rustCall { uniffi_rustylib_fn_clone_topicnetwork(self.pointer, $0) }
+    }
+
+    // No primary constructor declared for this class.
+
+    deinit {
+        guard let pointer = pointer else {
+            return
+        }
+
+        try! rustCall { uniffi_rustylib_fn_free_topicnetwork(pointer, $0) }
+    }
+
+    /**
+     * Local peer id as a base58 string.
+     */
+    open func localPeerId() -> String? {
+        return try! FfiConverterOptionString.lift(try! rustCall {
+            uniffi_rustylib_fn_method_topicnetwork_local_peer_id(self.uniffiClonePointer(), $0)
+        })
+    }
+
+    /**
+     * Publish a transaction (hex) to the topic.
+     */
+    open func publish(txHex: String) async throws {
+        return
+            try await uniffiRustCallAsync(
+                rustFutureFunc: {
+                    uniffi_rustylib_fn_method_topicnetwork_publish(
+                        self.uniffiClonePointer(),
+                        FfiConverterString.lower(txHex)
+                    )
+                },
+                pollFunc: ffi_rustylib_rust_future_poll_void,
+                completeFunc: ffi_rustylib_rust_future_complete_void,
+                freeFunc: ffi_rustylib_rust_future_free_void,
+                liftFunc: { $0 },
+                errorHandler: FfiConverterTypePigeonError.lift
+            )
+    }
+
+    /**
+     * Poll for the next event, returning immediately if none is available.
+     */
+    open func tryNextEvent() -> TopicEvent? {
+        return try! FfiConverterOptionTypeTopicEvent.lift(try! rustCall {
+            uniffi_rustylib_fn_method_topicnetwork_try_next_event(self.uniffiClonePointer(), $0)
+        })
+    }
+}
+
+public struct FfiConverterTypeTopicNetwork: FfiConverter {
+    typealias FfiType = UnsafeMutableRawPointer
+    typealias SwiftType = TopicNetwork
+
+    public static func lift(_ pointer: UnsafeMutableRawPointer) throws -> TopicNetwork {
+        return TopicNetwork(unsafeFromRawPointer: pointer)
+    }
+
+    public static func lower(_ value: TopicNetwork) -> UnsafeMutableRawPointer {
+        return value.uniffiClonePointer()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopicNetwork {
+        let v: UInt64 = try readInt(&buf)
+        // The Rust code won't compile if a pointer won't fit in a UInt64.
+        // We have to go via `UInt` because that's the thing that's the size of a pointer.
+        let ptr = UnsafeMutableRawPointer(bitPattern: UInt(truncatingIfNeeded: v))
+        if ptr == nil {
+            throw UniffiInternalError.unexpectedNullPointer
+        }
+        return try lift(ptr!)
+    }
+
+    public static func write(_ value: TopicNetwork, into buf: inout [UInt8]) {
+        // This fiddling is because `Int` is the thing that's the same size as a pointer.
+        // The Rust code won't compile if a pointer won't fit in a `UInt64`.
+        writeInt(&buf, UInt64(bitPattern: Int64(Int(bitPattern: lower(value)))))
+    }
+}
+
+public func FfiConverterTypeTopicNetwork_lift(_ pointer: UnsafeMutableRawPointer) throws -> TopicNetwork {
+    return try FfiConverterTypeTopicNetwork.lift(pointer)
+}
+
+public func FfiConverterTypeTopicNetwork_lower(_ value: TopicNetwork) -> UnsafeMutableRawPointer {
+    return FfiConverterTypeTopicNetwork.lower(value)
+}
+
+/**
+ * FFI-friendly configuration for a bitcoin-pigeon topic node.
+ */
+public struct TopicConfig {
+    public var bootstrapPeers: [String]
+    public var listenAddr: String
+    public var mdns: Bool
+    public var relayServer: Bool
+    public var floodPublish: Bool
+    public var `protocol`: String?
+    public var protocolVersion: String?
+
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
+    public init(bootstrapPeers: [String], listenAddr: String, mdns: Bool, relayServer: Bool, floodPublish: Bool, protocol: String?, protocolVersion: String?) {
+        self.bootstrapPeers = bootstrapPeers
+        self.listenAddr = listenAddr
+        self.mdns = mdns
+        self.relayServer = relayServer
+        self.floodPublish = floodPublish
+        self.protocol = `protocol`
+        self.protocolVersion = protocolVersion
+    }
+}
+
+extension TopicConfig: Equatable, Hashable {
+    public static func == (lhs: TopicConfig, rhs: TopicConfig) -> Bool {
+        if lhs.bootstrapPeers != rhs.bootstrapPeers {
+            return false
+        }
+        if lhs.listenAddr != rhs.listenAddr {
+            return false
+        }
+        if lhs.mdns != rhs.mdns {
+            return false
+        }
+        if lhs.relayServer != rhs.relayServer {
+            return false
+        }
+        if lhs.floodPublish != rhs.floodPublish {
+            return false
+        }
+        if lhs.protocol != rhs.protocol {
+            return false
+        }
+        if lhs.protocolVersion != rhs.protocolVersion {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(bootstrapPeers)
+        hasher.combine(listenAddr)
+        hasher.combine(mdns)
+        hasher.combine(relayServer)
+        hasher.combine(floodPublish)
+        hasher.combine(`protocol`)
+        hasher.combine(protocolVersion)
+    }
+}
+
+public struct FfiConverterTypeTopicConfig: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopicConfig {
+        return
+            try TopicConfig(
+                bootstrapPeers: FfiConverterSequenceString.read(from: &buf),
+                listenAddr: FfiConverterString.read(from: &buf),
+                mdns: FfiConverterBool.read(from: &buf),
+                relayServer: FfiConverterBool.read(from: &buf),
+                floodPublish: FfiConverterBool.read(from: &buf),
+                protocol: FfiConverterOptionString.read(from: &buf),
+                protocolVersion: FfiConverterOptionString.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: TopicConfig, into buf: inout [UInt8]) {
+        FfiConverterSequenceString.write(value.bootstrapPeers, into: &buf)
+        FfiConverterString.write(value.listenAddr, into: &buf)
+        FfiConverterBool.write(value.mdns, into: &buf)
+        FfiConverterBool.write(value.relayServer, into: &buf)
+        FfiConverterBool.write(value.floodPublish, into: &buf)
+        FfiConverterOptionString.write(value.protocol, into: &buf)
+        FfiConverterOptionString.write(value.protocolVersion, into: &buf)
+    }
+}
+
+public func FfiConverterTypeTopicConfig_lift(_ buf: RustBuffer) throws -> TopicConfig {
+    return try FfiConverterTypeTopicConfig.lift(buf)
+}
+
+public func FfiConverterTypeTopicConfig_lower(_ value: TopicConfig) -> RustBuffer {
+    return FfiConverterTypeTopicConfig.lower(value)
+}
+
 public enum BlastTransactionError {
     case Message(message: String)
 }
@@ -484,6 +734,167 @@ extension BlastTransactionError: Equatable, Hashable {}
 extension BlastTransactionError: Foundation.LocalizedError {
     public var errorDescription: String? {
         String(reflecting: self)
+    }
+}
+
+public enum PigeonError {
+    case Message(message: String)
+}
+
+public struct FfiConverterTypePigeonError: FfiConverterRustBuffer {
+    typealias SwiftType = PigeonError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PigeonError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return try .Message(
+                message: FfiConverterString.read(from: &buf)
+            )
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PigeonError, into buf: inout [UInt8]) {
+        switch value {
+        case .Message(_ /* message is ignored*/ ):
+            writeInt(&buf, Int32(1))
+        }
+    }
+}
+
+extension PigeonError: Equatable, Hashable {}
+
+extension PigeonError: Foundation.LocalizedError {
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+}
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/* 
+ * FFI-friendly event emitted by a topic node.
+ */
+
+public enum TopicEvent {
+    case message(txid: String)
+    case subscribed(peerId: String)
+    case unsubscribed(peerId: String)
+    case peerDiscovered(peerId: String, addr: String)
+    case peerExpired(peerId: String)
+    case listening(address: String)
+    case identified(peerId: String, agentVersion: String)
+}
+
+public struct FfiConverterTypeTopicEvent: FfiConverterRustBuffer {
+    typealias SwiftType = TopicEvent
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopicEvent {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        case 1: return try .message(txid: FfiConverterString.read(from: &buf))
+
+        case 2: return try .subscribed(peerId: FfiConverterString.read(from: &buf))
+
+        case 3: return try .unsubscribed(peerId: FfiConverterString.read(from: &buf))
+
+        case 4: return try .peerDiscovered(peerId: FfiConverterString.read(from: &buf), addr: FfiConverterString.read(from: &buf))
+
+        case 5: return try .peerExpired(peerId: FfiConverterString.read(from: &buf))
+
+        case 6: return try .listening(address: FfiConverterString.read(from: &buf))
+
+        case 7: return try .identified(peerId: FfiConverterString.read(from: &buf), agentVersion: FfiConverterString.read(from: &buf))
+
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: TopicEvent, into buf: inout [UInt8]) {
+        switch value {
+        case let .message(txid):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(txid, into: &buf)
+
+        case let .subscribed(peerId):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(peerId, into: &buf)
+
+        case let .unsubscribed(peerId):
+            writeInt(&buf, Int32(3))
+            FfiConverterString.write(peerId, into: &buf)
+
+        case let .peerDiscovered(peerId, addr):
+            writeInt(&buf, Int32(4))
+            FfiConverterString.write(peerId, into: &buf)
+            FfiConverterString.write(addr, into: &buf)
+
+        case let .peerExpired(peerId):
+            writeInt(&buf, Int32(5))
+            FfiConverterString.write(peerId, into: &buf)
+
+        case let .listening(address):
+            writeInt(&buf, Int32(6))
+            FfiConverterString.write(address, into: &buf)
+
+        case let .identified(peerId, agentVersion):
+            writeInt(&buf, Int32(7))
+            FfiConverterString.write(peerId, into: &buf)
+            FfiConverterString.write(agentVersion, into: &buf)
+        }
+    }
+}
+
+public func FfiConverterTypeTopicEvent_lift(_ buf: RustBuffer) throws -> TopicEvent {
+    return try FfiConverterTypeTopicEvent.lift(buf)
+}
+
+public func FfiConverterTypeTopicEvent_lower(_ value: TopicEvent) -> RustBuffer {
+    return FfiConverterTypeTopicEvent.lower(value)
+}
+
+extension TopicEvent: Equatable, Hashable {}
+
+private struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+private struct FfiConverterOptionTypeTopicEvent: FfiConverterRustBuffer {
+    typealias SwiftType = TopicEvent?
+
+    static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeTopicEvent.write(value, into: &buf)
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeTopicEvent.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
     }
 }
 
@@ -584,10 +995,56 @@ public func blastTransactionHex(txHex: String, torOnly: Bool, relay: Bool) async
         )
 }
 
+/**
+ * Compose a gossipsub protocol id from a prefix and version.
+ */
+public func composeProtocolIdFfi(prefix: String, version: String) -> String {
+    return try! FfiConverterString.lift(try! rustCall {
+        uniffi_rustylib_fn_func_compose_protocol_id_ffi(
+            FfiConverterString.lower(prefix),
+            FfiConverterString.lower(version), $0
+        )
+    })
+}
+
 public func drainBlastLogs() -> [String] {
     return try! FfiConverterSequenceString.lift(try! rustCall {
         uniffi_rustylib_fn_func_drain_blast_logs($0)
     })
+}
+
+/**
+ * Fetch recent transactions from libre relay peers, returning their hex.
+ */
+public func fetchTransactionHexes(limit: UInt32, torOnly: Bool, relay: Bool) async throws -> [String] {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_fetch_transaction_hexes(FfiConverterUInt32.lower(limit), FfiConverterBool.lower(torOnly), FfiConverterBool.lower(relay))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_rust_buffer,
+            completeFunc: ffi_rustylib_rust_future_complete_rust_buffer,
+            freeFunc: ffi_rustylib_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterSequenceString.lift,
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
+}
+
+/**
+ * Continuously fetch and rebroadcast transactions from libre relay peers.
+ */
+public func relayTransactionsFfi(limit: UInt32, torOnly: Bool, relay: Bool, intervalSecs: UInt64) async throws {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_relay_transactions_ffi(FfiConverterUInt32.lower(limit), FfiConverterBool.lower(torOnly), FfiConverterBool.lower(relay), FfiConverterUInt64.lower(intervalSecs))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_void,
+            completeFunc: ffi_rustylib_rust_future_complete_void,
+            freeFunc: ffi_rustylib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
 }
 
 public func setTorOnly(enabled: Bool) {
@@ -596,6 +1053,40 @@ public func setTorOnly(enabled: Bool) {
             FfiConverterBool.lower(enabled), $0
         )
     }
+}
+
+/**
+ * Spawn a passive gossip observer.
+ */
+public func spawnGossipClientFfi(label: String, torOnly: Bool, showLocal: Bool, showRemote: Bool, config: TopicConfig) async throws -> TopicNetwork {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_spawn_gossip_client_ffi(FfiConverterString.lower(label), FfiConverterBool.lower(torOnly), FfiConverterBool.lower(showLocal), FfiConverterBool.lower(showRemote), FfiConverterTypeTopicConfig.lower(config))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_pointer,
+            completeFunc: ffi_rustylib_rust_future_complete_pointer,
+            freeFunc: ffi_rustylib_rust_future_free_pointer,
+            liftFunc: FfiConverterTypeTopicNetwork.lift,
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
+}
+
+/**
+ * Spawn a topic node that publishes and rebroadcasts received transactions.
+ */
+public func spawnTopicNetworkFfi(label: String, torOnly: Bool, config: TopicConfig) async throws -> TopicNetwork {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_spawn_topic_network_ffi(FfiConverterString.lower(label), FfiConverterBool.lower(torOnly), FfiConverterTypeTopicConfig.lower(config))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_pointer,
+            completeFunc: ffi_rustylib_rust_future_complete_pointer,
+            freeFunc: ffi_rustylib_rust_future_free_pointer,
+            liftFunc: FfiConverterTypeTopicNetwork.lift,
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
 }
 
 private enum InitializationResult {
@@ -620,10 +1111,34 @@ private var initializationResult: InitializationResult = {
     if uniffi_rustylib_checksum_func_blast_transaction_hex() != 33064 {
         return InitializationResult.apiChecksumMismatch
     }
+    if uniffi_rustylib_checksum_func_compose_protocol_id_ffi() != 53564 {
+        return InitializationResult.apiChecksumMismatch
+    }
     if uniffi_rustylib_checksum_func_drain_blast_logs() != 59792 {
         return InitializationResult.apiChecksumMismatch
     }
+    if uniffi_rustylib_checksum_func_fetch_transaction_hexes() != 25633 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_relay_transactions_ffi() != 29646 {
+        return InitializationResult.apiChecksumMismatch
+    }
     if uniffi_rustylib_checksum_func_set_tor_only() != 5779 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_spawn_gossip_client_ffi() != 29804 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_spawn_topic_network_ffi() != 3790 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_method_topicnetwork_local_peer_id() != 63299 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_method_topicnetwork_publish() != 8235 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_method_topicnetwork_try_next_event() != 57178 {
         return InitializationResult.apiChecksumMismatch
     }
 

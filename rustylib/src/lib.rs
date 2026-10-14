@@ -4,6 +4,10 @@ use std::sync::{Mutex, OnceLock};
 
 use rand::prelude::IndexedRandom;
 use tracing::info;
+use tx_pigeon::topic::{
+    compose_protocol_id, spawn_gossip_client, spawn_topic_network, TopicConfig as RustTopicConfig,
+    TopicEvent as RustTopicEvent, TopicRelayHandle,
+};
 
 uniffi::setup_scaffolding!();
 
@@ -134,4 +138,194 @@ pub fn drain_blast_logs() -> Vec<String> {
         }
     }
     state.lines.drain(..).collect()
+}
+
+#[derive(Debug, uniffi::Error)]
+#[uniffi(flat_error)]
+pub enum PigeonError {
+    Message { message: String },
+}
+
+impl std::fmt::Display for PigeonError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Message { message } => f.write_str(message),
+        }
+    }
+}
+
+impl std::error::Error for PigeonError {}
+
+fn pigeon_error(error: impl std::fmt::Display) -> PigeonError {
+    PigeonError::Message {
+        message: error.to_string(),
+    }
+}
+
+/// FFI-friendly configuration for a bitcoin-pigeon topic node.
+#[derive(uniffi::Record)]
+pub struct TopicConfig {
+    pub bootstrap_peers: Vec<String>,
+    pub listen_addr: String,
+    pub mdns: bool,
+    pub relay_server: bool,
+    pub flood_publish: bool,
+    pub protocol: Option<String>,
+    pub protocol_version: Option<String>,
+}
+
+impl TopicConfig {
+    fn into_rust(self) -> Result<RustTopicConfig, PigeonError> {
+        let mut bootstrap_peers = Vec::with_capacity(self.bootstrap_peers.len());
+        for addr in self.bootstrap_peers {
+            bootstrap_peers.push(addr.parse().map_err(pigeon_error)?);
+        }
+        Ok(RustTopicConfig {
+            bootstrap_peers,
+            listen_addr: self.listen_addr.parse().map_err(pigeon_error)?,
+            mdns: self.mdns,
+            relay_server: self.relay_server,
+            flood_publish: self.flood_publish,
+            protocol: self.protocol,
+            protocol_version: self.protocol_version,
+        })
+    }
+}
+
+/// FFI-friendly event emitted by a topic node.
+#[derive(uniffi::Enum)]
+pub enum TopicEvent {
+    Message { txid: String },
+    Subscribed { peer_id: String },
+    Unsubscribed { peer_id: String },
+    PeerDiscovered { peer_id: String, addr: String },
+    PeerExpired { peer_id: String },
+    Listening { address: String },
+    Identified { peer_id: String, agent_version: String },
+}
+
+impl From<RustTopicEvent> for TopicEvent {
+    fn from(event: RustTopicEvent) -> Self {
+        match event {
+            RustTopicEvent::Message { txid } => TopicEvent::Message { txid },
+            RustTopicEvent::Subscribed { peer_id } => TopicEvent::Subscribed { peer_id },
+            RustTopicEvent::Unsubscribed { peer_id } => TopicEvent::Unsubscribed { peer_id },
+            RustTopicEvent::PeerDiscovered { peer_id, addr } => {
+                TopicEvent::PeerDiscovered { peer_id, addr }
+            }
+            RustTopicEvent::PeerExpired { peer_id } => TopicEvent::PeerExpired { peer_id },
+            RustTopicEvent::Listening { address } => TopicEvent::Listening { address },
+            RustTopicEvent::Identified {
+                peer_id,
+                agent_version,
+            } => TopicEvent::Identified {
+                peer_id,
+                agent_version,
+            },
+        }
+    }
+}
+
+/// Handle to a spawned topic network. Keeps the swarm alive and exposes a
+/// non-blocking event channel.
+#[derive(uniffi::Object)]
+pub struct TopicNetwork {
+    handle: Option<TopicRelayHandle>,
+    events: Mutex<Option<tokio::sync::mpsc::Receiver<RustTopicEvent>>>,
+}
+
+#[uniffi::export(async_runtime = "tokio")]
+impl TopicNetwork {
+    /// Publish a transaction (hex) to the topic.
+    pub async fn publish(&self, tx_hex: String) -> Result<(), PigeonError> {
+        match &self.handle {
+            Some(handle) => handle.publish(tx_hex).await.map_err(pigeon_error),
+            None => Err(PigeonError::Message {
+                message: "observer topic network cannot publish".to_string(),
+            }),
+        }
+    }
+
+    /// Local peer id as a base58 string.
+    pub fn local_peer_id(&self) -> Option<String> {
+        self.handle.as_ref().map(|h| h.local_peer_id().to_string())
+    }
+
+    /// Poll for the next event, returning immediately if none is available.
+    pub fn try_next_event(&self) -> Option<TopicEvent> {
+        let mut guard = self.events.lock().ok()?;
+        let rx = guard.as_mut()?;
+        match rx.try_recv() {
+            Ok(event) => Some(event.into()),
+            Err(_) => None,
+        }
+    }
+}
+
+/// Spawn a topic node that publishes and rebroadcasts received transactions.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn spawn_topic_network_ffi(
+    label: String,
+    tor_only: bool,
+    config: TopicConfig,
+) -> Result<std::sync::Arc<TopicNetwork>, PigeonError> {
+    let config = config.into_rust()?;
+    let (handle, events) = spawn_topic_network(label, tor_only, config)
+        .await
+        .map_err(pigeon_error)?;
+    Ok(std::sync::Arc::new(TopicNetwork {
+        handle: Some(handle),
+        events: Mutex::new(Some(events)),
+    }))
+}
+
+/// Spawn a passive gossip observer.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn spawn_gossip_client_ffi(
+    label: String,
+    tor_only: bool,
+    show_local: bool,
+    show_remote: bool,
+    config: TopicConfig,
+) -> Result<std::sync::Arc<TopicNetwork>, PigeonError> {
+    let config = config.into_rust()?;
+    let events = spawn_gossip_client(label, tor_only, show_local, show_remote, config)
+        .await
+        .map_err(pigeon_error)?;
+    Ok(std::sync::Arc::new(TopicNetwork {
+        handle: None,
+        events: Mutex::new(Some(events)),
+    }))
+}
+
+/// Compose a gossipsub protocol id from a prefix and version.
+#[uniffi::export]
+pub fn compose_protocol_id_ffi(prefix: String, version: String) -> String {
+    compose_protocol_id(&prefix, &version)
+}
+
+/// Fetch recent transactions from libre relay peers, returning their hex.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn fetch_transaction_hexes(
+    limit: u32,
+    tor_only: bool,
+    relay: bool,
+) -> Result<Vec<String>, PigeonError> {
+    let txs = tx_pigeon::fetch_transactions(limit as usize, tor_only, relay)
+        .await
+        .map_err(pigeon_error)?;
+    Ok(txs.into_iter().map(|tx| bitcoin::consensus::encode::serialize_hex(&tx)).collect())
+}
+
+/// Continuously fetch and rebroadcast transactions from libre relay peers.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn relay_transactions_ffi(
+    limit: u32,
+    tor_only: bool,
+    relay: bool,
+    interval_secs: u64,
+) -> Result<(), PigeonError> {
+    tx_pigeon::relay_transactions(limit as usize, tor_only, relay, interval_secs)
+        .await
+        .map_err(pigeon_error)
 }
