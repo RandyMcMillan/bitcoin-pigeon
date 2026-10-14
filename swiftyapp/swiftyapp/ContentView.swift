@@ -284,7 +284,7 @@ struct ContentView: View {
                 }
             }
 
-            let sleepSeconds = UInt64.random(in: 45...120)
+            let sleepSeconds = UInt64.random(in: 3...3)
             do {
                 try await Task.sleep(nanoseconds: sleepSeconds * 1_000_000_000)
             } catch {
