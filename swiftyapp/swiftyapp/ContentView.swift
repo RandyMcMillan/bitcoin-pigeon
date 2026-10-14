@@ -13,6 +13,7 @@ struct ContentView: View {
     private enum MainPaneMode {
         case compose
         case logging
+        case topic
     }
 
     private struct ActivityLogEntry: Identifiable {
@@ -61,6 +62,7 @@ struct ContentView: View {
     @State private var isWorking = false
     @State private var showingSettings = false
     @StateObject private var connectivityMonitor = ConnectivityMonitor()
+    @StateObject private var topicManager = TopicManager()
     @FocusState private var isTxHexFocused: Bool
 
     var body: some View {
@@ -81,12 +83,23 @@ struct ContentView: View {
 
                 VStack(spacing: 16) {
                     Group {
-                        if mainPaneMode == .compose {
+                        switch mainPaneMode {
+                        case .compose:
                             composePane
-                        } else {
+                        case .logging:
                             loggingPane
+                        case .topic:
+                            topicPane
                         }
                     }
+
+                    Picker("Pane", selection: $mainPaneMode) {
+                        Text("Compose").tag(MainPaneMode.compose)
+                        Text("Log").tag(MainPaneMode.logging)
+                        Text("Topic").tag(MainPaneMode.topic)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 16) {
@@ -260,6 +273,101 @@ struct ContentView: View {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(activityLog) { entry in
                         Text(entry.message)
+                            .font(.footnote.monospaced())
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(8)
+            .background(Color.black.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var topicPane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("bitcoin-pigeon topic")
+                        .font(.headline)
+                    if let peerId = topicManager.peerId {
+                        Text("peer: \(peerId)")
+                            .font(.caption)
+                            .lineLimit(1)
+                    } else {
+                        Text("Start a topic node to publish and relay transactions.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+            }
+
+            HStack(spacing: 12) {
+                Button(topicManager.isTopicRunning ? "Topic running" : "Start topic node") {
+                    Task {
+                        do {
+                            let prefix = protocolPrefix.isEmpty ? nil : protocolPrefix
+                            let version = protocolVersion.isEmpty ? nil : protocolVersion
+                            try await topicManager.startTopicNode(
+                                torOnly: torOnly,
+                                protocolPrefix: prefix,
+                                protocolVersion: version
+                            )
+                            appendActivityLog("Topic node started.")
+                        } catch {
+                            appendActivityLog("Topic node failed: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                .disabled(topicManager.isTopicRunning)
+                .buttonStyle(.borderedProminent)
+
+                Button(topicManager.isGossipRunning ? "Gossip running" : "Start gossip client") {
+                    Task {
+                        do {
+                            let prefix = protocolPrefix.isEmpty ? nil : protocolPrefix
+                            let version = protocolVersion.isEmpty ? nil : protocolVersion
+                            try await topicManager.startGossipClient(
+                                torOnly: torOnly,
+                                protocolPrefix: prefix,
+                                protocolVersion: version
+                            )
+                            appendActivityLog("Gossip client started.")
+                        } catch {
+                            appendActivityLog("Gossip client failed: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                .disabled(topicManager.isGossipRunning)
+                .buttonStyle(.bordered)
+
+                Spacer()
+
+                Button("Publish to topic") {
+                    Task {
+                        do {
+                            try await topicManager.publish(txHex: normalizedTxHex)
+                            appendActivityLog("Published transaction to topic.")
+                        } catch {
+                            appendActivityLog("Publish to topic failed: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                .disabled(!topicManager.isTopicRunning || !isTransactionHexValid)
+                .buttonStyle(.bordered)
+            }
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(topicManager.events) { entry in
+                        Text(entry.text)
                             .font(.footnote.monospaced())
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
