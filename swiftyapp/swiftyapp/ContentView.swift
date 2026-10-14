@@ -495,30 +495,12 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Network Clock")
                         .font(.headline)
-                    Text("BFT time consensus across bitcoin-pigeon peers.")
+                    Text("Auto-started BFT time consensus across bitcoin-pigeon peers.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
-
-                Button(clockManager.isRunning ? "Clock running" : "Start clock sync") {
-                    Task {
-                        do {
-                            let documents = FileManager.default.urls(
-                                for: .documentDirectory,
-                                in: .userDomainMask
-                            ).first
-                            let path = documents?.appendingPathComponent("bitcoin_pigeon_time.json").path
-                            try await clockManager.start(storagePath: path)
-                            appendActivityLog("Network clock sync started.")
-                        } catch {
-                            appendActivityLog("Network clock sync failed: \(error.localizedDescription)")
-                        }
-                    }
-                }
-                .disabled(clockManager.isRunning)
-                .buttonStyle(.borderedProminent)
 
                 Button("Refresh") {
                     clockManager.refresh()
@@ -589,6 +571,8 @@ struct ContentView: View {
                 ).first
                 let path = documents?.appendingPathComponent("bitcoin_pigeon_time.json").path
                 try await clockManager.start(storagePath: path)
+                clockManager.refresh()
+                appendActivityLog("Clock sync started on app launch.")
             } catch {
                 appendActivityLog("Clock sync auto-start failed: \(error.localizedDescription)")
             }

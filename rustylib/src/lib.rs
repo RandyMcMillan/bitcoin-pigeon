@@ -391,11 +391,17 @@ impl From<tx_pigeon::time::ClockMetrics> for ClockMetrics {
 }
 
 /// Start the P2P BFT time synchronization daemon.
+///
+/// Spawns the long-running daemon on the Tokio runtime and returns immediately
+/// so callers can treat it as an on/off toggle.
 #[uniffi::export(async_runtime = "tokio")]
 pub async fn start_time_sync_daemon(storage_path: Option<String>) -> Result<(), PigeonError> {
-    tx_pigeon::time::run_time_sync_daemon(storage_path)
-        .await
-        .map_err(pigeon_error)
+    tokio::spawn(async move {
+        if let Err(err) = tx_pigeon::time::run_time_sync_daemon(storage_path).await {
+            eprintln!("bitcoin-pigeon time sync daemon exited: {err}");
+        }
+    });
+    Ok(())
 }
 
 /// Return the current logical UTC time according to the shared clock.
