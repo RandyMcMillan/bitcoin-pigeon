@@ -51,8 +51,16 @@ struct ContentView: View {
                             .background(isTxHexFocused ? Color.black.opacity(0.18) : Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(isTxHexFocused ? Color.secondary : Color.clear)
+                                    .stroke(transactionHexBorderColor, lineWidth: transactionHexBorderWidth)
                             )
+                        if let transactionHexValidationMessage {
+                            Text(transactionHexValidationMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        } else {
+                            Text(" ")
+                                .font(.footnote)
+                        }
                     }
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -97,7 +105,7 @@ struct ContentView: View {
                         Button(isWorking ? "Blasting..." : "Blast transaction") {
                             Task { await blastTransaction() }
                         }
-                        .disabled(isWorking || normalizedTxHex.isEmpty)
+                        .disabled(isWorking || !isTransactionHexValid)
 
                         Text(statusMessage)
                         Text(autoBroadcastStatus)
@@ -218,6 +226,35 @@ struct ContentView: View {
 
     private var normalizedTxHex: String {
         txHex.components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+
+    private var isTransactionHexValid: Bool {
+        transactionHexValidationMessage == nil
+    }
+
+    private var transactionHexValidationMessage: String? {
+        let hex = normalizedTxHex
+        guard !hex.isEmpty else {
+            return "Paste a transaction hex to enable blasting."
+        }
+        guard hex.count % 2 == 0 else {
+            return "Transaction hex must contain an even number of characters."
+        }
+        guard hex.allSatisfy(\.isHexDigit) else {
+            return "Transaction hex can only contain 0-9 and a-f characters."
+        }
+        return nil
+    }
+
+    private var transactionHexBorderColor: Color {
+        guard !normalizedTxHex.isEmpty else {
+            return isTxHexFocused ? Color.secondary : Color.clear
+        }
+        return isTransactionHexValid ? (isTxHexFocused ? Color.secondary : Color.green.opacity(0.65)) : Color.red
+    }
+
+    private var transactionHexBorderWidth: CGFloat {
+        normalizedTxHex.isEmpty ? 1 : 2
     }
 
     private var protocolStatusSuffix: String {
