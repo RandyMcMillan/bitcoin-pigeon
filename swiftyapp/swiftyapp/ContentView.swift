@@ -13,7 +13,7 @@ struct ContentView: View {
     private let defaultProtocolVersion = "0.0.1"
 
     @State private var txHex = ""
-    @State private var torOnly = false
+    @State private var torOnly = true
     @State private var relay = true
     @State private var protocolPrefix = "/gnostr"
     @State private var protocolVersion = "0.0.1"
