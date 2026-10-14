@@ -5,7 +5,7 @@ set -eu
 SCHEME="Disk Inventory X"
 WORKSPACE="workspace.xcworkspace"
 BUILD_DIR="$(pwd)/build"
-APP_NAME="Disk Inventory X.app"
+APP_NAME="bitcoin-pigeon.app"
 APP_PATH="$BUILD_DIR/Release/$APP_NAME"
 
 CHECK_ONLY=0
