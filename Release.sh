@@ -90,7 +90,7 @@ if [ "$CHECK_ONLY" -eq 1 ]; then
   exit 0
 fi
 
-ZIP_NAME="$BUILD_DIR/Disk-Inventory-X-${TAG}.zip"
+ZIP_NAME="$BUILD_DIR/bitcoin-pigeon-${TAG}.zip"
 
 ./BuildRelease.sh
 
