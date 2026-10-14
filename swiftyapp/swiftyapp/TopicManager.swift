@@ -12,6 +12,7 @@ final class TopicManager: ObservableObject {
     @Published private(set) var peerId: String?
     @Published private(set) var isTopicRunning = false
     @Published private(set) var isGossipRunning = false
+    @Published private(set) var lastReceivedMessage: (txid: String, hex: String)?
 
     private var topicNetwork: TopicNetwork?
     private var gossipNetwork: TopicNetwork?
@@ -29,7 +30,7 @@ final class TopicManager: ObservableObject {
             listenAddr: "/ip4/0.0.0.0/tcp/0",
             mdns: true,
             relayServer: true,
-            floodPublish: false,
+            floodPublish: true,
             protocol: protocolPrefix,
             protocolVersion: protocolVersion
         )
@@ -88,6 +89,9 @@ final class TopicManager: ObservableObject {
                 let text = formatEvent(event)
                 await MainActor.run { [weak self] in
                     self?.events.append(Event(text: text))
+                    if case .message(let txid, let hex) = event {
+                        self?.lastReceivedMessage = (txid, hex)
+                    }
                 }
             }
             try? await Task.sleep(nanoseconds: 100_000_000)
@@ -96,8 +100,8 @@ final class TopicManager: ObservableObject {
 
     private func formatEvent(_ event: TopicEvent) -> String {
         switch event {
-        case .message(let txid):
-            return "topic message: txid=\(txid)"
+        case .message(let txid, let hex):
+            return "topic message: txid=\(txid) hex=\(String(hex.prefix(64)))..."
         case .subscribed(let peerId):
             return "peer subscribed: \(peerId)"
         case .unsubscribed(let peerId):

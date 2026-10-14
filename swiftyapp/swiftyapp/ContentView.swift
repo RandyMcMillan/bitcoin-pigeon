@@ -225,6 +225,11 @@ struct ContentView: View {
                     }
                 }
             }
+            .onChange(of: topicManager.lastReceivedMessage) { _, message in
+                if let message {
+                    mempoolManager.addPeerTx(txid: message.txid, hex: message.hex)
+                }
+            }
         }
     }
 
@@ -424,10 +429,15 @@ struct ContentView: View {
                             Text(entry.txid)
                                 .font(.caption.monospaced())
                                 .lineLimit(1)
-                            Text("hex: \(entry.hexPreview)...")
-                                .font(.caption2.monospaced())
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            HStack(spacing: 6) {
+                                Text(entry.source)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(entry.source == "bitcoin-pigeon peer" ? .orange : .secondary)
+                                Text("hex: \(entry.hexPreview)...")
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                            .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(8)

@@ -833,7 +833,7 @@ extension PigeonError: Foundation.LocalizedError {
  */
 
 public enum TopicEvent {
-    case message(txid: String)
+    case message(txid: String, hex: String)
     case subscribed(peerId: String)
     case unsubscribed(peerId: String)
     case peerDiscovered(peerId: String, addr: String)
@@ -848,7 +848,7 @@ public struct FfiConverterTypeTopicEvent: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TopicEvent {
         let variant: Int32 = try readInt(&buf)
         switch variant {
-        case 1: return try .message(txid: FfiConverterString.read(from: &buf))
+        case 1: return try .message(txid: FfiConverterString.read(from: &buf), hex: FfiConverterString.read(from: &buf))
 
         case 2: return try .subscribed(peerId: FfiConverterString.read(from: &buf))
 
@@ -868,9 +868,10 @@ public struct FfiConverterTypeTopicEvent: FfiConverterRustBuffer {
 
     public static func write(_ value: TopicEvent, into buf: inout [UInt8]) {
         switch value {
-        case let .message(txid):
+        case let .message(txid, hex):
             writeInt(&buf, Int32(1))
             FfiConverterString.write(txid, into: &buf)
+            FfiConverterString.write(hex, into: &buf)
 
         case let .subscribed(peerId):
             writeInt(&buf, Int32(2))
