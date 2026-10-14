@@ -188,6 +188,11 @@ struct ContentView: View {
                     .padding(.trailing, proxy.size.width < 500 ? 10 : 18)
                     .padding(.bottom, proxy.size.height < 700 ? 10 : 18)
             }
+            .overlay(alignment: .topTrailing) {
+                networkTimeBadge
+                    .padding(.trailing, proxy.size.width < 500 ? 10 : 18)
+                    .padding(.top, proxy.size.height < 700 ? 10 : 18)
+            }
             .contentShape(Rectangle())
             .onTapGesture {
                 isTxHexFocused = false
@@ -736,6 +741,28 @@ struct ContentView: View {
                     .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
             )
             .shadow(color: .black.opacity(0.16), radius: 6, x: 0, y: 2)
+    }
+
+    private var networkTimeBadge: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(clockManager.logicalUtc.isEmpty ? "--" : clockManager.logicalUtc)
+                .font(.caption2.monospaced().weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text("Δ=\(clockManager.offsetMs)ms \(clockManager.status)")
+                .font(.caption2.monospaced())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(
+            Capsule()
+                .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.16), radius: 6, x: 0, y: 2)
     }
 
     private var protocolStatusSuffix: String {
