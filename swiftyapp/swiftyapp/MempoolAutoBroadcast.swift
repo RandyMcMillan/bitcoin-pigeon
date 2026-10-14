@@ -65,7 +65,11 @@ enum MempoolBroadcastError: LocalizedError {
     }
 }
 
-func broadcastRandomRecentTransaction(torOnly: Bool, relay: Bool) async throws -> MempoolBroadcastResult {
+func broadcastRandomRecentTransaction(
+    torOnly: Bool,
+    relay: Bool,
+    logger: ((String) -> Void)? = nil
+) async throws -> MempoolBroadcastResult {
     let sources: [MempoolSource]
     if torOnly {
         sources = [.tor]
@@ -73,19 +77,27 @@ func broadcastRandomRecentTransaction(torOnly: Bool, relay: Bool) async throws -
         sources = MempoolSource.allCases.shuffled()
     }
 
+    logger?("Auto-broadcast: selected sources \(sources.map(\.label).joined(separator: ", "))")
+
     var lastError: Error?
 
     for source in sources {
         do {
+            logger?("Auto-broadcast: fetching recent transactions from \(source.label)")
             let recent = try await fetchRecentTransactions(from: source)
             guard let tx = recent.randomElement() else {
                 throw MempoolBroadcastError.emptyRecentTransactions(source: source)
             }
 
+            logger?("Auto-broadcast: selected txid \(tx.txid) from \(source.label)")
+            logger?("Auto-broadcast: fetching raw hex for \(tx.txid) from \(source.label)")
             let txHex = try await fetchRawTransactionHex(txid: tx.txid, source: source)
+            logger?("Auto-broadcast: blasting \(tx.txid) torOnly=\(torOnly) relay=\(relay)")
             let nodeCount = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
+            logger?("Auto-broadcast: blasted \(tx.txid) to \(nodeCount) nodes from \(source.label)")
             return MempoolBroadcastResult(source: source, txid: tx.txid, nodeCount: nodeCount)
         } catch {
+            logger?("Auto-broadcast: source \(source.label) failed with \(error.localizedDescription)")
             lastError = error
         }
     }
