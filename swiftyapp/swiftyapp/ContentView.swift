@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Network
 import RustyLib
 
 struct ContentView: View {
@@ -17,6 +18,27 @@ struct ContentView: View {
     private struct ActivityLogEntry: Identifiable {
         let id = UUID()
         let message: String
+    }
+
+    private final class ConnectivityMonitor: ObservableObject {
+        @Published var statusMessage = "Network status unknown."
+
+        private let monitor = NWPathMonitor()
+        private let queue = DispatchQueue(label: "swiftyapp.connectivity-monitor")
+
+        init() {
+            monitor.pathUpdateHandler = { [weak self] path in
+                let message = path.status == .satisfied ? "Network online." : "Network offline."
+                DispatchQueue.main.async {
+                    self?.statusMessage = message
+                }
+            }
+            monitor.start(queue: queue)
+        }
+
+        deinit {
+            monitor.cancel()
+        }
     }
 
     private let defaultProtocolPrefix = "/gnostr"
@@ -34,6 +56,7 @@ struct ContentView: View {
     @State private var didStartAutoBroadcast = false
     @State private var isWorking = false
     @State private var showingSettings = false
+    @StateObject private var connectivityMonitor = ConnectivityMonitor()
     @FocusState private var isTxHexFocused: Bool
 
     var body: some View {
@@ -104,6 +127,9 @@ struct ContentView: View {
                         Text(autoBroadcastStatus)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                        Text(connectivityMonitor.statusMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -134,6 +160,9 @@ struct ContentView: View {
             }
             .onAppear {
                 startAutoBroadcastLoopIfNeeded()
+            }
+            .onChange(of: connectivityMonitor.statusMessage) { _, newValue in
+                appendActivityLog("Connectivity status: \(newValue)")
             }
             .sheet(isPresented: $showingSettings) {
                 NavigationStack {
@@ -251,14 +280,21 @@ struct ContentView: View {
         await MainActor.run {
             autoBroadcastStatus = "Auto-broadcast running."
             appendActivityLog("Auto-broadcast loop started.")
+            appendActivityLog("Auto-broadcast connectivity monitor: \(connectivityMonitor.statusMessage)")
         }
 
         while !Task.isCancelled {
             let torOnly = await MainActor.run { self.torOnly }
             let relay = await MainActor.run { self.relay }
             setTorOnly(enabled: torOnly)
+            await MainActor.run {
+                appendActivityLog("Auto-broadcast tick: torOnly=\(torOnly) relay=\(relay) connectivity=\(connectivityMonitor.statusMessage)")
+            }
 
             do {
+                await MainActor.run {
+                    appendActivityLog("Auto-broadcast attempting fetch and rebroadcast.")
+                }
                 let result = try await broadcastRandomRecentTransaction(
                     torOnly: torOnly,
                     relay: relay,
@@ -280,16 +316,16 @@ struct ContentView: View {
                     autoBroadcastStatus = torOnly
                         ? "autobroadcast waiting for tor connectivity"
                         : "Auto-broadcast temporarily unavailable."
-                    appendActivityLog("Auto-broadcast failed: \(error.localizedDescription)")
+                    appendActivityLog("Auto-broadcast failed: \(self.describeAutoBroadcastError(error, torOnly: torOnly))")
+                    appendActivityLog("Connectivity status: \(connectivityMonitor.statusMessage)")
+                    appendActivityLog("Auto-broadcast retrying in 3 seconds.")
                 }
             }
 
-            let sleepSeconds = UInt64.random(in: 3...3)
-            do {
-                try await Task.sleep(nanoseconds: sleepSeconds * 1_000_000_000)
-            } catch {
-                break
+            await MainActor.run {
+                appendActivityLog("Auto-broadcast retrying immediately.")
             }
+            await Task.yield()
         }
     }
 
@@ -312,6 +348,15 @@ struct ContentView: View {
             statusMessage = error.localizedDescription
             appendActivityLog("Manual blast failed: \(error.localizedDescription)")
         }
+    }
+
+    private func describeAutoBroadcastError(_ error: Error, torOnly: Bool) -> String {
+        if let urlError = error as? URLError, urlError.code == .notConnectedToInternet {
+            return torOnly
+                ? "No internet connection is available for Tor connectivity."
+                : "No internet connection is available."
+        }
+        return error.localizedDescription
     }
 
     private var normalizedTxHex: String {
