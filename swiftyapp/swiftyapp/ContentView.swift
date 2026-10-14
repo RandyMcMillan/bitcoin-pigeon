@@ -41,14 +41,18 @@ struct ContentView: View {
         }
     }
 
+    private static let appVersion: String = {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+    }()
+
     private let defaultProtocolPrefix = "/gnostr"
-    private let defaultProtocolVersion = "0.0.1"
+    private let defaultProtocolVersion = Self.appVersion
 
     @State private var txHex = ""
     @State private var torOnly = true
     @State private var relay = true
     @State private var protocolPrefix = "/gnostr"
-    @State private var protocolVersion = "0.0.1"
+    @State private var protocolVersion = Self.appVersion
     @State private var statusMessage = "Paste a raw transaction hex, then blast it."
     @State private var autoBroadcastStatus = "Auto-broadcast idle."
     @State private var activityLog: [ActivityLogEntry] = []
@@ -409,7 +413,7 @@ struct ContentView: View {
         }
 
         let prefix = protocolPrefix.isEmpty ? defaultProtocolPrefix : protocolPrefix
-        let version = protocolVersion.isEmpty ? "0.0.1" : protocolVersion
+        let version = protocolVersion.isEmpty ? Self.appVersion : protocolVersion
         return " protocol=\(composeProtocolID(prefix: prefix, version: version))"
     }
 
