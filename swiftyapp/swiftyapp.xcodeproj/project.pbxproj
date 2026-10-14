@@ -12,6 +12,7 @@
 		291DE5382C3DE74F007F9706 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291DE5372C3DE74F007F9706 /* Assets.xcassets */; };
 		291DE53B2C3DE74F007F9706 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 291DE53A2C3DE74F007F9706 /* Preview Assets.xcassets */; };
 		2986A2E32C3F8FA200D13583 /* RustyLib in Frameworks */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
+		6E2DCC4735EB43144CA09ECB /* MempoolManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CE38B7F63371DCFC5892E1 /* MempoolManager.swift */; };
 		9CF5897E88888F18BB8B6ECB /* TopicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF5CCC1AA310EB6B47E4192 /* TopicManager.swift */; };
 		A1B2C3D41A2B3C4D5E6F7002 /* SwiftyAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D41A2B3C4D5E6F7001 /* SwiftyAppTests.swift */; };
 		A1B2C3D41A2B3C4D5E6F7014 /* RustyLib in Frameworks */ = {isa = PBXBuildFile; productRef = 2986A2E22C3F8FA200D13583 /* RustyLib */; };
@@ -42,6 +43,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		27CE38B7F63371DCFC5892E1 /* MempoolManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MempoolManager.swift; sourceTree = "<group>"; };
 		291DE5302C3DE74F007F9706 /* swiftyapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = swiftyapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		291DE5332C3DE74F007F9706 /* swiftyappApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = swiftyappApp.swift; sourceTree = "<group>"; };
 		291DE5352C3DE74F007F9706 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -103,6 +105,7 @@
 				291DE5372C3DE74F007F9706 /* Assets.xcassets */,
 				291DE5392C3DE74F007F9706 /* Preview Content */,
 				ABF5CCC1AA310EB6B47E4192 /* TopicManager.swift */,
+				27CE38B7F63371DCFC5892E1 /* MempoolManager.swift */,
 			);
 			path = swiftyapp;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				291DE5342C3DE74F007F9706 /* swiftyappApp.swift in Sources */,
 				A1B2C3D41A2B3C4D5E6F7016 /* MempoolAutoBroadcast.swift in Sources */,
 				9CF5897E88888F18BB8B6ECB /* TopicManager.swift in Sources */,
+				6E2DCC4735EB43144CA09ECB /* MempoolManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

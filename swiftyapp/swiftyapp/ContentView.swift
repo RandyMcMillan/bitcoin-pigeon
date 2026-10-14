@@ -14,6 +14,7 @@ struct ContentView: View {
         case compose
         case logging
         case topic
+        case mempool
     }
 
     private struct ActivityLogEntry: Identifiable {
@@ -63,6 +64,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @StateObject private var connectivityMonitor = ConnectivityMonitor()
     @StateObject private var topicManager = TopicManager()
+    @StateObject private var mempoolManager = MempoolManager()
     @FocusState private var isTxHexFocused: Bool
 
     var body: some View {
@@ -90,6 +92,8 @@ struct ContentView: View {
                             loggingPane
                         case .topic:
                             topicPane
+                        case .mempool:
+                            mempoolPane
                         }
                     }
 
@@ -97,6 +101,7 @@ struct ContentView: View {
                         Text("Compose").tag(MainPaneMode.compose)
                         Text("Log").tag(MainPaneMode.logging)
                         Text("Topic").tag(MainPaneMode.topic)
+                        Text("Mempool").tag(MainPaneMode.mempool)
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
@@ -382,6 +387,67 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var mempoolPane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Mempool")
+                        .font(.headline)
+                    Text("Recent transactions from public mempool APIs.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button(mempoolManager.isLoading ? "Loading..." : "Refresh") {
+                    Task {
+                        await mempoolManager.load(limit: 20, torOnly: torOnly)
+                    }
+                }
+                .disabled(mempoolManager.isLoading)
+                .buttonStyle(.borderedProminent)
+            }
+
+            if let error = mempoolManager.lastError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    ForEach(mempoolManager.entries) { entry in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.txid)
+                                .font(.caption.monospaced())
+                                .lineLimit(1)
+                            Text("hex: \(entry.hexPreview)...")
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                        .background(Color.black.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(8)
+            .background(Color.black.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .task {
+            await mempoolManager.load(limit: 20, torOnly: torOnly)
+        }
     }
 
     private func startAutoBroadcastLoopIfNeeded() {

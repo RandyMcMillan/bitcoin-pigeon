@@ -609,6 +609,61 @@ public func FfiConverterTypeTopicNetwork_lower(_ value: TopicNetwork) -> UnsafeM
 }
 
 /**
+ * A recent mempool entry returned by public mempool APIs.
+ */
+public struct MempoolTx {
+    public var txid: String
+    public var hex: String
+
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
+    public init(txid: String, hex: String) {
+        self.txid = txid
+        self.hex = hex
+    }
+}
+
+extension MempoolTx: Equatable, Hashable {
+    public static func == (lhs: MempoolTx, rhs: MempoolTx) -> Bool {
+        if lhs.txid != rhs.txid {
+            return false
+        }
+        if lhs.hex != rhs.hex {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(txid)
+        hasher.combine(hex)
+    }
+}
+
+public struct FfiConverterTypeMempoolTx: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MempoolTx {
+        return
+            try MempoolTx(
+                txid: FfiConverterString.read(from: &buf),
+                hex: FfiConverterString.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: MempoolTx, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.txid, into: &buf)
+        FfiConverterString.write(value.hex, into: &buf)
+    }
+}
+
+public func FfiConverterTypeMempoolTx_lift(_ buf: RustBuffer) throws -> MempoolTx {
+    return try FfiConverterTypeMempoolTx.lift(buf)
+}
+
+public func FfiConverterTypeMempoolTx_lower(_ value: MempoolTx) -> RustBuffer {
+    return FfiConverterTypeMempoolTx.lower(value)
+}
+
+/**
  * FFI-friendly configuration for a bitcoin-pigeon topic node.
  */
 public struct TopicConfig {
@@ -920,6 +975,28 @@ private struct FfiConverterSequenceString: FfiConverterRustBuffer {
     }
 }
 
+private struct FfiConverterSequenceTypeMempoolTx: FfiConverterRustBuffer {
+    typealias SwiftType = [MempoolTx]
+
+    static func write(_ value: [MempoolTx], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeMempoolTx.write(item, into: &buf)
+        }
+    }
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [MempoolTx] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [MempoolTx]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            try seq.append(FfiConverterTypeMempoolTx.read(from: &buf))
+        }
+        return seq
+    }
+}
+
 private let UNIFFI_RUST_FUTURE_POLL_READY: Int8 = 0
 private let UNIFFI_RUST_FUTURE_POLL_MAYBE_READY: Int8 = 1
 
@@ -1011,6 +1088,23 @@ public func drainBlastLogs() -> [String] {
     return try! FfiConverterSequenceString.lift(try! rustCall {
         uniffi_rustylib_fn_func_drain_blast_logs($0)
     })
+}
+
+/**
+ * Fetch recent transactions from public mempool APIs.
+ */
+public func fetchRecentMempoolTxs(limit: UInt32, torOnly: Bool) async throws -> [MempoolTx] {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_fetch_recent_mempool_txs(FfiConverterUInt32.lower(limit), FfiConverterBool.lower(torOnly))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_rust_buffer,
+            completeFunc: ffi_rustylib_rust_future_complete_rust_buffer,
+            freeFunc: ffi_rustylib_rust_future_free_rust_buffer,
+            liftFunc: FfiConverterSequenceTypeMempoolTx.lift,
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
 }
 
 /**
@@ -1115,6 +1209,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_drain_blast_logs() != 59792 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_fetch_recent_mempool_txs() != 62012 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_fetch_transaction_hexes() != 25633 {

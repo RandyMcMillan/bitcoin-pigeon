@@ -298,6 +298,28 @@ pub async fn spawn_gossip_client_ffi(
     }))
 }
 
+/// A recent mempool entry returned by public mempool APIs.
+#[derive(uniffi::Record)]
+pub struct MempoolTx {
+    pub txid: String,
+    pub hex: String,
+}
+
+/// Fetch recent transactions from public mempool APIs.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn fetch_recent_mempool_txs(
+    limit: u32,
+    tor_only: bool,
+) -> Result<Vec<MempoolTx>, PigeonError> {
+    let txs = tx_pigeon::mempool::fetch_recent_tx_hexes(limit as usize, tor_only)
+        .await
+        .map_err(pigeon_error)?;
+    Ok(txs
+        .into_iter()
+        .map(|(txid, hex)| MempoolTx { txid, hex })
+        .collect())
+}
+
 /// Compose a gossipsub protocol id from a prefix and version.
 #[uniffi::export]
 pub fn compose_protocol_id_ffi(prefix: String, version: String) -> String {
