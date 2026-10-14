@@ -1,10 +1,15 @@
 #!/bin/sh
 
+set -eu
+
+PROJECT="swiftyapp/swiftyapp.xcodeproj"
+SCHEME="swiftyapp"
+
 xcodebuild \
-    -workspace workspace.xcworkspace \
-    -scheme "Disk Inventory X" \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
     -configuration Release \
-    -destination 'generic/platform=macOS' \
+    -destination 'generic/platform=macOS,variant=Mac Catalyst' \
     CODE_SIGNING_ALLOWED=NO \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGN_IDENTITY="" \
