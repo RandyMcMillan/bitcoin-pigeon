@@ -415,3 +415,9 @@ pub fn get_logical_utc() -> String {
 pub fn get_clock_metrics() -> ClockMetrics {
     tx_pigeon::time::get_clock_metrics().into()
 }
+
+/// Return the number of peers connected to the time sync daemon.
+#[uniffi::export]
+pub fn get_time_sync_peer_count() -> u32 {
+    tx_pigeon::time::get_time_sync_peer_count() as u32
+}

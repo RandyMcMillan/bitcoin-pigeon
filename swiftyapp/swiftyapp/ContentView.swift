@@ -522,6 +522,13 @@ struct ContentView: View {
                     Spacer()
                 }
                 HStack {
+                    Text("Peers:")
+                        .font(.caption.weight(.semibold))
+                    Text("\(clockManager.peerCount)")
+                        .font(.caption.monospaced())
+                    Spacer()
+                }
+                HStack {
                     Text("Slew rate:")
                         .font(.caption.weight(.semibold))
                     Text(String(format: "%.6f", clockManager.slewRate))
@@ -753,6 +760,10 @@ struct ContentView: View {
                 .font(.caption2.monospaced())
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+            Text("peers: \(clockManager.peerCount)")
+                .font(.caption2.monospaced())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .foregroundStyle(.primary)
         .padding(.horizontal, 12)
@@ -804,6 +815,7 @@ final class ClockManager: ObservableObject {
     @Published private(set) var offsetMs: Int64 = 0
     @Published private(set) var lastSyncSecsAgo: UInt64 = .max
     @Published private(set) var logicalUtc = ""
+    @Published private(set) var peerCount: UInt32 = 0
     @Published private(set) var isRunning = false
 
     private var refreshTask: Task<Void, Never>?
@@ -833,6 +845,7 @@ final class ClockManager: ObservableObject {
         offsetMs = metrics.offsetMs
         lastSyncSecsAgo = metrics.lastSyncSecsAgo
         logicalUtc = getLogicalUtc()
+        peerCount = getTimeSyncPeerCount()
     }
 }
 
