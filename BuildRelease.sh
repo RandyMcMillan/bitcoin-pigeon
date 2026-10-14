@@ -5,6 +5,8 @@ set -eu
 PROJECT="swiftyapp/swiftyapp.xcodeproj"
 SCHEME="swiftyapp"
 
+./build.sh
+
 xcodebuild \
     -project "$PROJECT" \
     -scheme "$SCHEME" \
