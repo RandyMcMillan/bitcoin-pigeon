@@ -7,12 +7,15 @@ private struct RecentTransaction: Decodable {
 
 enum MempoolSource: String, CaseIterable {
     case clearnet
+    case bitcoinGobSV
     case tor
 
     var label: String {
         switch self {
         case .clearnet:
             return "mempool.space"
+        case .bitcoinGobSV:
+            return "bitcoin.gob.sv"
         case .tor:
             return "mempool onion"
         }
@@ -22,6 +25,8 @@ enum MempoolSource: String, CaseIterable {
         switch self {
         case .clearnet:
             return URL(string: "https://mempool.space")!
+        case .bitcoinGobSV:
+            return URL(string: "https://bitcoin.gob.sv")!
         case .tor:
             return URL(string: "http://mempoolhqx4isw62xs7abwphsq7ldayuidyx2v2oethdhhj6mlo2r6ad.onion")!
         }
@@ -65,9 +70,7 @@ func broadcastRandomRecentTransaction(torOnly: Bool, relay: Bool) async throws -
     if torOnly {
         sources = [.tor]
     } else {
-        let first: MempoolSource = Bool.random() ? .tor : .clearnet
-        let second: MempoolSource = first == .tor ? .clearnet : .tor
-        sources = [first, second]
+        sources = MempoolSource.allCases.shuffled()
     }
 
     var lastError: Error?
