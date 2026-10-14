@@ -6,7 +6,7 @@ PROJECT="swiftyapp/swiftyapp.xcodeproj"
 SCHEME="swiftyapp"
 BUILD_DIR="$(pwd)/build"
 APP_NAME="swiftyapp.app"
-APP_PATH="$BUILD_DIR/Release/$APP_NAME"
+APP_PATH="$BUILD_DIR/Release-maccatalyst/$APP_NAME"
 
 CHECK_ONLY=0
 NOTARIZE=0
