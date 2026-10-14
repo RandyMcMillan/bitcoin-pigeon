@@ -407,6 +407,32 @@ private struct FfiConverterUInt64: FfiConverterPrimitive {
     }
 }
 
+private struct FfiConverterInt64: FfiConverterPrimitive {
+    typealias FfiType = Int64
+    typealias SwiftType = Int64
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int64 {
+        return try lift(readInt(&buf))
+    }
+
+    static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+private struct FfiConverterDouble: FfiConverterPrimitive {
+    typealias FfiType = Double
+    typealias SwiftType = Double
+
+    static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Double {
+        return try lift(readDouble(&buf))
+    }
+
+    static func write(_ value: Double, into buf: inout [UInt8]) {
+        writeDouble(&buf, lower(value))
+    }
+}
+
 private struct FfiConverterBool: FfiConverter {
     typealias FfiType = Int8
     typealias SwiftType = Bool
@@ -606,6 +632,77 @@ public func FfiConverterTypeTopicNetwork_lift(_ pointer: UnsafeMutableRawPointer
 
 public func FfiConverterTypeTopicNetwork_lower(_ value: TopicNetwork) -> UnsafeMutableRawPointer {
     return FfiConverterTypeTopicNetwork.lower(value)
+}
+
+/**
+ * Metrics for the bitcoin-pigeon BFT logical clock.
+ */
+public struct ClockMetrics {
+    public var slewRate: Double
+    public var offsetMs: Int64
+    public var status: String
+    public var lastSyncSecsAgo: UInt64
+
+    /// Default memberwise initializers are never public by default, so we
+    /// declare one manually.
+    public init(slewRate: Double, offsetMs: Int64, status: String, lastSyncSecsAgo: UInt64) {
+        self.slewRate = slewRate
+        self.offsetMs = offsetMs
+        self.status = status
+        self.lastSyncSecsAgo = lastSyncSecsAgo
+    }
+}
+
+extension ClockMetrics: Equatable, Hashable {
+    public static func == (lhs: ClockMetrics, rhs: ClockMetrics) -> Bool {
+        if lhs.slewRate != rhs.slewRate {
+            return false
+        }
+        if lhs.offsetMs != rhs.offsetMs {
+            return false
+        }
+        if lhs.status != rhs.status {
+            return false
+        }
+        if lhs.lastSyncSecsAgo != rhs.lastSyncSecsAgo {
+            return false
+        }
+        return true
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(slewRate)
+        hasher.combine(offsetMs)
+        hasher.combine(status)
+        hasher.combine(lastSyncSecsAgo)
+    }
+}
+
+public struct FfiConverterTypeClockMetrics: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ClockMetrics {
+        return
+            try ClockMetrics(
+                slewRate: FfiConverterDouble.read(from: &buf),
+                offsetMs: FfiConverterInt64.read(from: &buf),
+                status: FfiConverterString.read(from: &buf),
+                lastSyncSecsAgo: FfiConverterUInt64.read(from: &buf)
+            )
+    }
+
+    public static func write(_ value: ClockMetrics, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.slewRate, into: &buf)
+        FfiConverterInt64.write(value.offsetMs, into: &buf)
+        FfiConverterString.write(value.status, into: &buf)
+        FfiConverterUInt64.write(value.lastSyncSecsAgo, into: &buf)
+    }
+}
+
+public func FfiConverterTypeClockMetrics_lift(_ buf: RustBuffer) throws -> ClockMetrics {
+    return try FfiConverterTypeClockMetrics.lift(buf)
+}
+
+public func FfiConverterTypeClockMetrics_lower(_ value: ClockMetrics) -> RustBuffer {
+    return FfiConverterTypeClockMetrics.lower(value)
 }
 
 /**
@@ -1126,6 +1223,24 @@ public func fetchTransactionHexes(limit: UInt32, torOnly: Bool, relay: Bool) asy
 }
 
 /**
+ * Return the current clock metrics.
+ */
+public func getClockMetrics() -> ClockMetrics {
+    return try! FfiConverterTypeClockMetrics.lift(try! rustCall {
+        uniffi_rustylib_fn_func_get_clock_metrics($0)
+    })
+}
+
+/**
+ * Return the current logical UTC time according to the shared clock.
+ */
+public func getLogicalUtc() -> String {
+    return try! FfiConverterString.lift(try! rustCall {
+        uniffi_rustylib_fn_func_get_logical_utc($0)
+    })
+}
+
+/**
  * Return the shared bitcoin-pigeon consensus mempool accumulated from
  * gossipsub messages received by this process.
  */
@@ -1194,6 +1309,23 @@ public func spawnTopicNetworkFfi(label: String, torOnly: Bool, config: TopicConf
         )
 }
 
+/**
+ * Start the P2P BFT time synchronization daemon.
+ */
+public func startTimeSyncDaemon(storagePath: String?) async throws {
+    return
+        try await uniffiRustCallAsync(
+            rustFutureFunc: {
+                uniffi_rustylib_fn_func_start_time_sync_daemon(FfiConverterOptionString.lower(storagePath))
+            },
+            pollFunc: ffi_rustylib_rust_future_poll_void,
+            completeFunc: ffi_rustylib_rust_future_complete_void,
+            freeFunc: ffi_rustylib_rust_future_free_void,
+            liftFunc: { $0 },
+            errorHandler: FfiConverterTypePigeonError.lift
+        )
+}
+
 private enum InitializationResult {
     case ok
     case contractVersionMismatch
@@ -1228,6 +1360,12 @@ private var initializationResult: InitializationResult = {
     if uniffi_rustylib_checksum_func_fetch_transaction_hexes() != 25633 {
         return InitializationResult.apiChecksumMismatch
     }
+    if uniffi_rustylib_checksum_func_get_clock_metrics() != 55440 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_get_logical_utc() != 53296 {
+        return InitializationResult.apiChecksumMismatch
+    }
     if uniffi_rustylib_checksum_func_get_shared_mempool_txs() != 6688 {
         return InitializationResult.apiChecksumMismatch
     }
@@ -1241,6 +1379,9 @@ private var initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_func_spawn_topic_network_ffi() != 3790 {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if uniffi_rustylib_checksum_func_start_time_sync_daemon() != 4953 {
         return InitializationResult.apiChecksumMismatch
     }
     if uniffi_rustylib_checksum_method_topicnetwork_local_peer_id() != 63299 {

@@ -1006,8 +1006,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c673075a2e0e5f4a1dde27ce9dee1ea4558c7ffe648f576438a20ca1d2acc4b0"
 dependencies = [
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -7186,6 +7188,7 @@ dependencies = [
  "anyhow",
  "arti-client",
  "bitcoin",
+ "chrono",
  "clap",
  "data-encoding",
  "directories",
@@ -7195,6 +7198,7 @@ dependencies = [
  "rand 0.9.4",
  "reqwest",
  "serde",
+ "serde_json",
  "sha3",
  "tokio",
  "tor-rtcompat",

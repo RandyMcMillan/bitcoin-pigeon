@@ -15,6 +15,7 @@ struct ContentView: View {
         case logging
         case topic
         case mempool
+        case clock
     }
 
     private struct ActivityLogEntry: Identifiable {
@@ -65,6 +66,7 @@ struct ContentView: View {
     @StateObject private var connectivityMonitor = ConnectivityMonitor()
     @StateObject private var topicManager = TopicManager()
     @StateObject private var mempoolManager = MempoolManager()
+    @StateObject private var clockManager = ClockManager()
     @FocusState private var isTxHexFocused: Bool
 
     var body: some View {
@@ -94,6 +96,8 @@ struct ContentView: View {
                             topicPane
                         case .mempool:
                             mempoolPane
+                        case .clock:
+                            clockPane
                         }
                     }
 
@@ -102,6 +106,7 @@ struct ContentView: View {
                         Text("Log").tag(MainPaneMode.logging)
                         Text("Topic").tag(MainPaneMode.topic)
                         Text("Mempool").tag(MainPaneMode.mempool)
+                        Text("Clock").tag(MainPaneMode.clock)
                     }
                     .pickerStyle(.segmented)
                     .padding(.horizontal)
@@ -461,6 +466,93 @@ struct ContentView: View {
         }
     }
 
+    private var clockPane: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Network Clock")
+                        .font(.headline)
+                    Text("BFT time consensus across bitcoin-pigeon peers.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button(clockManager.isRunning ? "Clock running" : "Start clock sync") {
+                    Task {
+                        do {
+                            let documents = FileManager.default.urls(
+                                for: .documentDirectory,
+                                in: .userDomainMask
+                            ).first
+                            let path = documents?.appendingPathComponent("bitcoin_pigeon_time.json").path
+                            try await clockManager.start(storagePath: path)
+                            appendActivityLog("Network clock sync started.")
+                        } catch {
+                            appendActivityLog("Network clock sync failed: \(error.localizedDescription)")
+                        }
+                    }
+                }
+                .disabled(clockManager.isRunning)
+                .buttonStyle(.borderedProminent)
+
+                Button("Refresh") {
+                    clockManager.refresh()
+                }
+                .buttonStyle(.bordered)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Status:")
+                        .font(.caption.weight(.semibold))
+                    Text(clockManager.status)
+                        .font(.caption)
+                    Spacer()
+                }
+                HStack {
+                    Text("Slew rate:")
+                        .font(.caption.weight(.semibold))
+                    Text(String(format: "%.6f", clockManager.slewRate))
+                        .font(.caption.monospaced())
+                    Spacer()
+                }
+                HStack {
+                    Text("Offset ms:")
+                        .font(.caption.weight(.semibold))
+                    Text("\(clockManager.offsetMs)")
+                        .font(.caption.monospaced())
+                    Spacer()
+                }
+                HStack {
+                    Text("Last sync:")
+                        .font(.caption.weight(.semibold))
+                    Text(clockManager.lastSyncSecsAgo == .max ? "never" : "\(clockManager.lastSyncSecsAgo)s ago")
+                        .font(.caption)
+                    Spacer()
+                }
+                HStack {
+                    Text("Logical UTC:")
+                        .font(.caption.weight(.semibold))
+                    Text(clockManager.logicalUtc)
+                        .font(.caption.monospaced())
+                        .lineLimit(1)
+                    Spacer()
+                }
+            }
+            .padding(8)
+            .background(Color.black.opacity(0.14))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
     private func startAutoBroadcastLoopIfNeeded() {
         guard !didStartAutoBroadcast else {
             return
@@ -647,6 +739,45 @@ struct ContentView: View {
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
+}
+
+@MainActor
+final class ClockManager: ObservableObject {
+    @Published private(set) var status = "Init"
+    @Published private(set) var slewRate = 1.0
+    @Published private(set) var offsetMs: Int64 = 0
+    @Published private(set) var lastSyncSecsAgo: UInt64 = .max
+    @Published private(set) var logicalUtc = ""
+    @Published private(set) var isRunning = false
+
+    private var refreshTask: Task<Void, Never>?
+
+    func start(storagePath: String?) async throws {
+        guard !isRunning else { return }
+        try await startTimeSyncDaemon(storagePath: storagePath)
+        isRunning = true
+        refreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refresh()
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+    }
+
+    func stop() {
+        refreshTask?.cancel()
+        refreshTask = nil
+        isRunning = false
+    }
+
+    func refresh() {
+        let metrics = getClockMetrics()
+        status = metrics.status
+        slewRate = metrics.slewRate
+        offsetMs = metrics.offsetMs
+        lastSyncSecsAgo = metrics.lastSyncSecsAgo
+        logicalUtc = getLogicalUtc()
+    }
 }
 
 #Preview {

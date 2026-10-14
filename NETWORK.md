@@ -125,6 +125,32 @@ logged at `info` level plus printed to stdout, including:
 This makes it possible to inspect the actual transaction bytes moving between
 peers and from peers to Libre relay nodes.
 
+## Network time consensus
+
+bitcoin-pigeon also shares a **Byzantine Fault Tolerant logical clock** across
+peers (`tx-pigeon/src/time.rs`).  The design is adapted from gnostr-p2p's BFT
+clock:
+
+- Each node runs a small libp2p swarm on `/bitcoin-pigeon/time/1.0` that
+  exchanges request/response time-sync messages with discovered peers.
+- Every 10 seconds the node sends a `SyncRequest { t1 }` to each connected peer.
+- The peer replies with `SyncResponse { t1, t2 }` containing its local logical
+  time when the request was received.
+- The requester uses the round-trip times to build `Estimation { d, a }`
+  samples and applies `apply_bft_sync(estimates)` once it has at least `2*f + 1`
+  samples (default `f = 1`, so 3 peers).
+- The algorithm sorts the estimates, discards the `f` highest and `f` lowest
+  outliers, and takes the midpoint of the remaining window as the consensus
+  offset.  It then slews the local clock toward the peer median.
+- If no quorum is available the clock stays in `Init`; if the estimate window is
+  empty after removing outliers the clock becomes `Unreliable` and broadcasts a
+  `HealthAlert` on the `bitcoin-pigeon-time-alerts` gossip topic.
+- The clock checkpoint is persisted to JSON so the offset survives restarts.
+
+The Swift *Clock* pane exposes `startTimeSyncDaemon`, `getClockMetrics`, and
+`getLogicalUtc`, displaying status, slew rate, offset, last-sync age, and the
+current logical UTC.
+
 ## Test commands
 
 ```bash
@@ -143,8 +169,10 @@ cargo test --test relay_nocapture -- --ignored --nocapture
 
 ## Summary
 
-bitcoin-pigeon does not rely on a central server for mempool consensus.  Each
-instance subscribes to the same gossipsub topic, publishes transactions it wants
-to share, and inserts every received transaction into a local shared mempool.
-With `flood_publish` enabled by default, even two instances on a LAN share a
-single, deduplicated, live mempool view.
+bitcoin-pigeon does not rely on a central server for mempool or time consensus.
+Each instance subscribes to the same gossipsub topic, publishes transactions it
+wants to share, and inserts every received transaction into a local shared
+mempool.  At the same time, the BFT clock daemon keeps the node's logical time
+synchronized with its peers.  With `flood_publish` enabled by default, even two
+instances on a LAN share a single, deduplicated, live mempool view and a common
+time base.

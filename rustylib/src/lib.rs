@@ -361,3 +361,43 @@ pub async fn relay_transactions_ffi(
         .await
         .map_err(pigeon_error)
 }
+
+/// Metrics for the bitcoin-pigeon BFT logical clock.
+#[derive(uniffi::Record)]
+pub struct ClockMetrics {
+    pub slew_rate: f64,
+    pub offset_ms: i64,
+    pub status: String,
+    pub last_sync_secs_ago: u64,
+}
+
+impl From<tx_pigeon::time::ClockMetrics> for ClockMetrics {
+    fn from(m: tx_pigeon::time::ClockMetrics) -> Self {
+        Self {
+            slew_rate: m.slew_rate,
+            offset_ms: m.offset_ms,
+            status: format!("{:?}", m.status),
+            last_sync_secs_ago: m.last_sync_secs_ago,
+        }
+    }
+}
+
+/// Start the P2P BFT time synchronization daemon.
+#[uniffi::export(async_runtime = "tokio")]
+pub async fn start_time_sync_daemon(storage_path: Option<String>) -> Result<(), PigeonError> {
+    tx_pigeon::time::run_time_sync_daemon(storage_path)
+        .await
+        .map_err(pigeon_error)
+}
+
+/// Return the current logical UTC time according to the shared clock.
+#[uniffi::export]
+pub fn get_logical_utc() -> String {
+    tx_pigeon::time::get_logical_utc()
+}
+
+/// Return the current clock metrics.
+#[uniffi::export]
+pub fn get_clock_metrics() -> ClockMetrics {
+    tx_pigeon::time::get_clock_metrics().into()
+}
