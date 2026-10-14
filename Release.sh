@@ -119,15 +119,19 @@ if [ -z "$TEAM_ID" ]; then
   TEAM_ID="M684FYCYG6"
 fi
 
-find "$APP_PATH/Contents/Frameworks" -name '*.cstemp' -delete
-
-for FRAMEWORK in "$APP_PATH"/Contents/Frameworks/*.framework; do
-  if [ -d "$FRAMEWORK" ]; then
-    if [ "$NOTARIZE" -eq 1 ]; then
-      codesign --force --sign "$SIGNING_IDENTITY" --timestamp --options runtime "$FRAMEWORK"
-    else
-      codesign --force --sign "$SIGNING_IDENTITY" --timestamp=none --options runtime "$FRAMEWORK"
-    fi
+FRAMEWORK_DIRS="$APP_PATH/Contents/Frameworks $BUILD_DIR/Release-maccatalyst/PackageFrameworks"
+for FRAMEWORK_DIR in $FRAMEWORK_DIRS; do
+  if [ -d "$FRAMEWORK_DIR" ]; then
+    find "$FRAMEWORK_DIR" -name '*.cstemp' -delete
+    for FRAMEWORK in "$FRAMEWORK_DIR"/*.framework; do
+      if [ -d "$FRAMEWORK" ]; then
+        if [ "$NOTARIZE" -eq 1 ]; then
+          codesign --force --sign "$SIGNING_IDENTITY" --timestamp --options runtime "$FRAMEWORK"
+        else
+          codesign --force --sign "$SIGNING_IDENTITY" --timestamp=none --options runtime "$FRAMEWORK"
+        fi
+      fi
+    done
   fi
 done
 
