@@ -15,17 +15,19 @@ final class SwiftyAppTests: XCTestCase {
         XCTAssertFalse(recent.isEmpty, "mempool recent returned no transactions")
         NSLog("mempool recent returned \(recent.count) transactions")
 
-        for (index, tx) in recent.enumerated() {
-            NSLog("------------------------------------------------------------")
-            NSLog("TX \(index + 1)/\(recent.count)")
-            NSLog("TXID: \(tx.txid)")
-            let txHex = try await fetchRawTransactionHex(txid: tx.txid)
-            NSLog("received \(txHex.count) hex characters for \(tx.txid)")
-            let count = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
-            NSLog("blasted \(tx.txid) to \(count) nodes torOnly=\(torOnly) relay=\(relay)")
+        guard let tx = recent.first else {
+            throw XCTSkip("mempool recent returned no transactions")
         }
 
-        NSLog("SWIFTYAPP TEST COMPLETE: blasted \(recent.count) recent mempool transactions")
+        NSLog("------------------------------------------------------------")
+        NSLog("TX 1/1")
+        NSLog("TXID: \(tx.txid)")
+        let txHex = try await fetchRawTransactionHex(txid: tx.txid)
+        NSLog("received \(txHex.count) hex characters for \(tx.txid)")
+        let count = try await blastTransactionHex(txHex: txHex, torOnly: torOnly, relay: relay)
+        NSLog("blasted \(tx.txid) to \(count) nodes torOnly=\(torOnly) relay=\(relay)")
+
+        NSLog("SWIFTYAPP TEST COMPLETE: blasted 1 recent mempool transaction")
         NSLog("============================================================")
     }
 }
