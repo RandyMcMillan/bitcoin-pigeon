@@ -62,6 +62,8 @@ struct ContentView: View {
     @State private var mainPaneMode: MainPaneMode = .compose
     @State private var didStartAutoBroadcast = false
     @State private var didStartClockSync = false
+    @State private var didStartTopicNode = false
+    @State private var didStartGossipClient = false
     @State private var isWorking = false
     @State private var showingSettings = false
     @StateObject private var connectivityMonitor = ConnectivityMonitor()
@@ -199,6 +201,8 @@ struct ContentView: View {
             }
             .onAppear {
                 startClockSyncIfNeeded()
+                startTopicNodeIfNeeded()
+                startGossipClientIfNeeded()
                 startAutoBroadcastLoopIfNeeded()
             }
             .onChange(of: connectivityMonitor.statusMessage) { _, newValue in
@@ -323,7 +327,7 @@ struct ContentView: View {
                             .font(.caption)
                             .lineLimit(1)
                     } else {
-                        Text("Start a topic node to publish and relay transactions.")
+                        Text("Auto-started topic node publishes and relays transactions.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -587,6 +591,48 @@ struct ContentView: View {
                 appendActivityLog("Clock sync started on app launch.")
             } catch {
                 appendActivityLog("Clock sync auto-start failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func startTopicNodeIfNeeded() {
+        guard !didStartTopicNode else {
+            return
+        }
+        didStartTopicNode = true
+        Task {
+            do {
+                let prefix = protocolPrefix.isEmpty ? nil : protocolPrefix
+                let version = protocolVersion.isEmpty ? nil : protocolVersion
+                try await topicManager.startTopicNode(
+                    torOnly: torOnly,
+                    protocolPrefix: prefix,
+                    protocolVersion: version
+                )
+                appendActivityLog("Topic node auto-started on app launch.")
+            } catch {
+                appendActivityLog("Topic node auto-start failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func startGossipClientIfNeeded() {
+        guard !didStartGossipClient else {
+            return
+        }
+        didStartGossipClient = true
+        Task {
+            do {
+                let prefix = protocolPrefix.isEmpty ? nil : protocolPrefix
+                let version = protocolVersion.isEmpty ? nil : protocolVersion
+                try await topicManager.startGossipClient(
+                    torOnly: torOnly,
+                    protocolPrefix: prefix,
+                    protocolVersion: version
+                )
+                appendActivityLog("Gossip client auto-started on app launch.")
+            } catch {
+                appendActivityLog("Gossip client auto-start failed: \(error.localizedDescription)")
             }
         }
     }
