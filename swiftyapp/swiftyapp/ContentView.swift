@@ -293,21 +293,14 @@ struct ContentView: View {
 
             do {
                 await MainActor.run {
-                    appendActivityLog("Auto-broadcast attempting fetch and rebroadcast.")
+                    appendActivityLog("Auto-broadcast delegating fetch/broadcast to Rust.")
                     appendActivityLog("Auto-broadcast relay mode is \(relay ? "enabled" : "disabled"); connecting to Libra relays.")
                 }
-                let result = try await broadcastRandomRecentTransaction(
-                    torOnly: torOnly,
-                    relay: relay,
-                    logger: { message in
-                        Task { @MainActor in
-                            appendActivityLog(message)
-                        }
-                    }
-                )
+                let count = try await autoBroadcastRecentTransaction(torOnly: torOnly, relay: relay)
                 await MainActor.run {
-                    autoBroadcastStatus = "Auto-broadcasted \(result.txid) from \(result.source.label) to \(result.nodeCount) nodes."
-                    appendActivityLog("Auto-broadcast success: \(result.txid) via \(result.source.label) to \(result.nodeCount) nodes.")
+                    autoBroadcastStatus = "Auto-broadcasted to \(count) libre relay nodes."
+                    appendActivityLog("Auto-broadcast success: delivered to \(count) nodes.")
+                    appendCapturedRustLogs()
                 }
             } catch is CancellationError {
                 break
@@ -319,6 +312,7 @@ struct ContentView: View {
                         : "Auto-broadcast temporarily unavailable."
                     appendActivityLog("Auto-broadcast failed: \(self.describeAutoBroadcastError(error, torOnly: torOnly))")
                     appendActivityLog("Connectivity status: \(connectivityMonitor.statusMessage)")
+                    appendCapturedRustLogs()
                     appendActivityLog("Auto-broadcast retrying in 3 seconds.")
                 }
             }
