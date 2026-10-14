@@ -61,6 +61,7 @@ struct ContentView: View {
     @State private var activityLog: [ActivityLogEntry] = []
     @State private var mainPaneMode: MainPaneMode = .compose
     @State private var didStartAutoBroadcast = false
+    @State private var didStartClockSync = false
     @State private var isWorking = false
     @State private var showingSettings = false
     @StateObject private var connectivityMonitor = ConnectivityMonitor()
@@ -192,6 +193,7 @@ struct ContentView: View {
                 isTxHexFocused = false
             }
             .onAppear {
+                startClockSyncIfNeeded()
                 startAutoBroadcastLoopIfNeeded()
             }
             .onChange(of: connectivityMonitor.statusMessage) { _, newValue in
@@ -574,6 +576,25 @@ struct ContentView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
+    private func startClockSyncIfNeeded() {
+        guard !didStartClockSync else {
+            return
+        }
+        didStartClockSync = true
+        Task {
+            do {
+                let documents = FileManager.default.urls(
+                    for: .documentDirectory,
+                    in: .userDomainMask
+                ).first
+                let path = documents?.appendingPathComponent("bitcoin_pigeon_time.json").path
+                try await clockManager.start(storagePath: path)
+            } catch {
+                appendActivityLog("Clock sync auto-start failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     private func startAutoBroadcastLoopIfNeeded() {
         guard !didStartAutoBroadcast else {
             return
@@ -746,7 +767,10 @@ struct ContentView: View {
     @MainActor
     private func appendActivityLog(_ message: String) {
         let timestamp = Self.activityLogFormatter.string(from: Date())
-        activityLog.append(ActivityLogEntry(message: "[\(timestamp)] \(message)"))
+        let delta = clockManager.offsetMs
+        let status = clockManager.status
+        let prefix = "[\(timestamp)] [Δ=\(delta)ms \(status)]"
+        activityLog.append(ActivityLogEntry(message: "\(prefix) \(message)"))
         if activityLog.count > 200 {
             activityLog.removeFirst(activityLog.count - 200)
         }
