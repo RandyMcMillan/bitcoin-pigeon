@@ -24,7 +24,7 @@ CATALYST_APP_PATH := $(SYMROOT)/$(CONFIGURATION)-maccatalyst/$(APP_NAME)
 
 .DEFAULT_GOAL := help
 
-.PHONY: help rust icons icons-tor art test test-tor resolve app catalyst install clean
+.PHONY: help rust icons icons-tor art test test-tor resolve app catalyst release install clean
 .PHONY: test-relay-nocapture
 
 help:
@@ -39,6 +39,7 @@ help:
 		'make resolve   - resolve local Swift package dependencies' \
 		'make app       - build the iOS app for a generic simulator destination' \
 		'make catalyst  - build the app for Mac Catalyst' \
+		'make release   - build and package the app release' \
 		'make install   - install the Mac Catalyst app into ~/Applications' \
 		'make clean     - clean Rust and Xcode build artifacts'
 
@@ -186,6 +187,9 @@ catalyst: rust resolve
 		ARCHS="$(HOST_ARCH)" \
 		ONLY_ACTIVE_ARCH=YES \
 		build
+
+release:
+	./Release.sh
 
 install: catalyst
 	mkdir -p "$(INSTALL_DIR)"
